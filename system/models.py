@@ -8,10 +8,10 @@ class CustomUser(AbstractUser):
         ('admin', 'Admin'),
     ]
 
-    username = None  # remove username field
+    username = None 
     full_name = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=15, unique=True)
-    email = models.EmailField(unique=True)  # make sure email is unique
+    email = models.EmailField(unique=True)  
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='customer')
 
     USERNAME_FIELD = 'email'  
@@ -22,8 +22,8 @@ class CustomUser(AbstractUser):
 
 
 class Telco(models.Model):
-    name = models.CharField(max_length=50)  # MTN, Telecel, AirtelTigo
-    code = models.CharField(max_length=20, unique=True)  # For API calls
+    name = models.CharField(max_length=50)  
+    code = models.CharField(max_length=20, unique=True)  
 
     def __str__(self):
         return self.name
@@ -31,9 +31,9 @@ class Telco(models.Model):
 
 class Bundle(models.Model):
     telco = models.ForeignKey(Telco, on_delete=models.CASCADE)
-    name = models.CharField(max_length=50)  # e.g. "1GB"
-    size_mb = models.PositiveIntegerField()  # 1024 for 1GB
-    price = models.DecimalField(max_digits=10, decimal_places=2)  # Price in GHS
+    name = models.CharField(max_length=50)  
+    size_mb = models.PositiveIntegerField()  
+    price = models.DecimalField(max_digits=10, decimal_places=2)  
 
     def __str__(self):
         return f"{self.telco.name} - {self.name}"
@@ -52,7 +52,7 @@ class DataBundleOrder(models.Model):
     bundle = models.ForeignKey(Bundle, on_delete=models.CASCADE)
     phone_number = models.CharField(max_length=15)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    provider_order_id = models.CharField(max_length=100, blank=True, null=True)  # from main system
+    provider_order_id = models.CharField(max_length=100, blank=True, null=True)  
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -69,7 +69,7 @@ class Payment(models.Model):
 
     order = models.OneToOneField(DataBundleOrder, on_delete=models.CASCADE, related_name="payment")
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    reference = models.CharField(max_length=100, unique=True)  # Paystack reference
+    reference = models.CharField(max_length=100, unique=True)  
     status = models.CharField(max_length=20, choices=PAYMENT_STATUS, default='pending')
     paid_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)

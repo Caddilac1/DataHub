@@ -79,7 +79,7 @@ WSGI_APPLICATION = 'DataHub.wsgi.application'
 
 
 AUTHENTICATION_BACKENDS = [
-    'system.backends.EmailBackend',  # our custom backend
+    #'system.backends.EmailBackend',  # our custom backend
     'django.contrib.auth.backends.ModelBackend',  # keep default as fallback
 ]
 

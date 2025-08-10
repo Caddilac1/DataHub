@@ -32,7 +32,7 @@ class Telco(models.Model):
 
 
 class Bundle(models.Model):
-    telco = models.ForeignKey(Telco, on_delete=models.CASCADE)
+    telco = models.ForeignKey(Telco, on_delete=models.PROTECT)
     name = models.CharField(max_length=50)  
     size_mb = models.PositiveIntegerField()  
     price = models.DecimalField(max_digits=10, decimal_places=2)  
@@ -49,9 +49,9 @@ class DataBundleOrder(models.Model):
         ('failed', 'Failed'),
     ]
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    telco = models.ForeignKey(Telco, on_delete=models.CASCADE)
-    bundle = models.ForeignKey(Bundle, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    telco = models.ForeignKey(Telco, on_delete=models.PROTECT)
+    bundle = models.ForeignKey(Bundle, on_delete=models.PROTECT)
     phone_number = models.CharField(max_length=15)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     provider_order_id = models.CharField(max_length=100, blank=True, null=True)  
@@ -69,7 +69,7 @@ class Payment(models.Model):
         ('failed', 'Failed'),
     ]
 
-    order = models.OneToOneField(DataBundleOrder, on_delete=models.CASCADE, related_name="payment")
+    order = models.OneToOneField(DataBundleOrder, on_delete=models.PROTECT, related_name="payment")
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     reference = models.CharField(max_length=100, unique=True)  
     status = models.CharField(max_length=20, choices=PAYMENT_STATUS, default='pending')

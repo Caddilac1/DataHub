@@ -16,6 +16,7 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
+from .models import *
 
 # Create your views here.
 
@@ -34,9 +35,19 @@ class RegisterView(View):
 
 class LogoutView(View):
     def get(self, request):
-        if request.user.is_authenticated:
-            messages.success(request, "You have been successfully logged out. See you soon!")
-            create_log_entry(
+        if request.user.is_authenticated:   
+             user = request.user
+             AuditLog.objects.create(
+                user=user,
+                action='user_logout',
+                details={
+                    'message': f"User {user.full_name} has logged out successfully.",
+                    'session_key': request.session.session_key
+                },
+                ip_address=request.META.get('REMOTE_ADDR'),
+                user_agent=request.META.get('HTTP_USER_AGENT', '')
+            )
+             create_log_entry(
                 user=request.user,
                 content_type=ContentType.objects.get_for_model(User),
                 object_id=request.user.pk,
@@ -44,9 +55,10 @@ class LogoutView(View):
                 action_flag=2,  # CHANGE action
                 change_message=f"User {request.user.full_name} has logged out successfully"
             )
-            logout(request)
+             logout(request)
+             messages.success(request, "You have been successfully logged out. See you soon!")
             
 
-            return redirect('login')
+             return redirect('login')
         else:
             return redirect('home')

@@ -20,15 +20,78 @@ from .models import *
 
 # Create your views here.
 
+from django.shortcuts import render, redirect
+from django.views import View
+from django.contrib import messages
+from .forms import CustomUserCreationForm
+from .models import CustomUser, OTP, AuditLog
+from django.urls import reverse
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.conf import settings
+from django.utils.html import strip_tags
+
 class RegisterView(View):
-    template_name = 'authentication/register.html'
+    def get(self, request):
+        form = CustomUserCreationForm()
+        return render(request, 'registration/register.html', {'form': form})
 
-    def get(self, request, *args, **kwargs):
-        return render(request, self.template_name)
+    def post(self, request):
+        form = CustomUserCreationForm(request.POST)
+        if form.is_valid():
+            try:
+                # 1. Create the user
+                user = form.save(commit=False)
+                user.is_active = False # Deactivate until email is verified
+                user.save()
 
-    def post(self, request, *args, **kwargs):
-        # Handle registration logic here
-        pass
+                # 2. Generate and save OTP
+                otp_instance, otp_code = OTP.generate_otp(
+                    user=user,
+                    otp_type='email_verification',
+                    ip_address=request.META.get('REMOTE_ADDR'),
+                    user_agent=request.META.get('HTTP_USER_AGENT', '')
+                )
+                
+                # 3. Send OTP to user's email
+                subject = 'DataHub - Confirm Your Email'
+                html_message = render_to_string(
+                    'emails/otp_email.html', 
+                    {'user': user, 'otp_code': otp_code}
+                )
+                plain_message = strip_tags(html_message)
+                from_email = settings.DEFAULT_FROM_EMAIL
+                to_email = user.email
+                
+                send_mail(subject, plain_message, from_email, [to_email], html_message=html_message)
+
+                # 4. Create an audit log entry
+                AuditLog.objects.create(
+                    user=user,
+                    action='user_created',
+                    details={'message': 'User account created and verification OTP sent.'},
+                    ip_address=request.META.get('REMOTE_ADDR'),
+                    user_agent=request.META.get('HTTP_USER_AGENT', '')
+                )
+                
+                # 5. Display success message and redirect
+                messages.success(request, 'Registration successful! An OTP has been sent to your email. Please verify to log in.')
+                return redirect(reverse('login'))
+
+            except Exception as e:
+                # Log the error for debugging
+                print(f"Registration Error: {e}")
+                messages.error(request, 'An unexpected error occurred during registration. Please try again later.')
+                AuditLog.objects.create(
+                    user=None, # User creation failed
+                    action='user_created_failed', # Assuming you add this to your choices
+                    details={'message': f'Registration failed due to an error: {str(e)}'},
+                    ip_address=request.META.get('REMOTE_ADDR'),
+                    user_agent=request.META.get('HTTP_USER_AGENT', '')
+                )
+                
+        # If form is not valid, re-render the form with errors
+        return render(request, 'registration/register.html', {'form': form})
 
 
 

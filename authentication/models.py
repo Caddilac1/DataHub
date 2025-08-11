@@ -53,6 +53,9 @@ def generate_reference_id():
 def generate_otp_id():
     return generate_custom_id("OTP")
 
+def generate_audit_id():
+    return generate_custom_id("AUD")
+
 
 # ---------- Custom User Model ----------
 class CustomUser(AbstractUser):
@@ -476,7 +479,7 @@ class Payment(models.Model):
 
 # ---------- Audit Log Model (Optional but Recommended) ----------
 class AuditLog(models.Model):
-    id = models.CharField(primary_key=True, max_length=20, default=lambda: generate_custom_id("AUD"), editable=False)
+    id = models.CharField(primary_key=True, max_length=20, default=generate_audit_id, editable=False)
     
     ACTION_CHOICES = [
         ('user_created', 'User Created'),

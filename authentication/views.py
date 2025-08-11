@@ -91,7 +91,7 @@ class RegisterView(View):
                 )
                 
         # If form is not valid, re-render the form with errors
-        return render(request, 'registration/register.html', {'form': form})
+        return render(request, 'authentication/registration/register.html', {'form': form})
 
 
 

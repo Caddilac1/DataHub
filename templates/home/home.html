@@ -20,7 +20,7 @@
             <p>Your Reliable Data Connection Partner in Ghana</p>
         </div>
 
-        <form action="{% url 'logout' %}" method="post">
+        <form action="{% url 'signout' %}" method="post">
     {% csrf_token %}
     <button type="submit">Logout</button>
 </form>

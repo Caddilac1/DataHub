@@ -12,8 +12,7 @@ from django.contrib.auth.views import LogoutView
 from django.views.generic import View, CreateView,UpdateView, DetailView, DeleteView, ListView
 
 # Create your views here.
-def HomeView(request):
-    return render(request, 'home.html')
+
 
 
 

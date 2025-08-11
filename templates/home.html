@@ -22,7 +22,7 @@
         <a class="navbar-item" data-nav="profile">Profile</a>
     </div>
     
-    <form method="post" action="{% url 'logout' %}" class="navbar-profile">
+    <form method="post" action="{% url 'signout' %}" class="navbar-profile">
         {% csrf_token %}
         <div class="profile-avatar" id="profileAvatar">U</div>
         <button class="logout-btn" onclick="logoutUser()">Logout</button>

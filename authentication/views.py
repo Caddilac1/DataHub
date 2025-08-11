@@ -34,7 +34,7 @@ from django.utils.html import strip_tags
 class RegisterView(View):
     def get(self, request):
         form = CustomUserCreationForm()
-        return render(request, 'registration/register.html', {'form': form})
+        return render(request, 'authentication/registration/register.html', {'form': form})
 
     def post(self, request):
         form = CustomUserCreationForm(request.POST)

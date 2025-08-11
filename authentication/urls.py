@@ -7,6 +7,6 @@ from .views import *
 from system.views import *
 
 urlpatterns = [
-   path('', RegisterView, name='register'),
+   path('', RegisterView.as_view(), name='register'),
    
 ]

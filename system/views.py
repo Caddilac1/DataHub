@@ -1,17 +1,11 @@
 from django.shortcuts import render
 from django.contrib.auth import login
 import json
-from django.views.generic.edit import FormView
 from django.urls import reverse_lazy
-from django.contrib.auth.views import LoginView
-from django.urls import reverse_lazy
-from .forms import EmailLoginForm
-from .models import *
 from django.views import View
 from django.contrib import messages
-from django.contrib.auth.views import LogoutView
 from django.views.generic import TemplateView
-from .models import Bundle
+from authentication.models import *
 # Create your views here.
 
 
@@ -45,29 +39,18 @@ class HomeView(TemplateView):
             'user': request.user  
         })
 
-class CustomerRegisterView(FormView):
-    template_name = "register.html"
-    form_class = CustomerRegistrationForm
-    success_url = reverse_lazy("home")  
 
-    def form_valid(self, form):
-        user = form.save()
-        login(self.request, user)
-        return super().form_valid(form)
-
-from django.contrib import messages
-from django.contrib.auth.views import LogoutView
-from django.views.generic import View, CreateView,UpdateView, DetailView, DeleteView, ListView
 
 # Create your views here.
 
 
 
 
-class HomeView(View):
+"""class HomeView(View):
     template_name = 'home/home.html'
 
     def get(self, request):
         context = {}
         return render(request, self.template_name, context)
 
+"""

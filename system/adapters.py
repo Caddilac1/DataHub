@@ -33,4 +33,12 @@ class NoUsernameSocialAccountAdapter(DefaultSocialAccountAdapter):
         if hasattr(user, 'phone_number') and not user.phone_number:
             user.phone_number = ""
 
+        # Set your custom flags here
+        if hasattr(user, 'email_verified'):
+            user.email_verified = True
+        if hasattr(user, 'account_status'):
+            user.account_status = 'active'  # or the exact value you use for active
+        if hasattr(user, 'is_active'):
+            user.is_active = True
+
         return user

@@ -93,7 +93,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 SOCIALACCOUNT_FORMS = {
-    'signup': 'system.forms.SocialSignupForm'
+    'signup': 'authentication.forms.SocialSignupForm'
 }
 
 

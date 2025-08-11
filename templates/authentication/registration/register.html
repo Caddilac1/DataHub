@@ -27,31 +27,37 @@
         </div>
 
         <form class="auth-form" id="registrationForm" method="post">
-            {% csrf_token %}
+    {% csrf_token %}
+    
+    {% for field in form %}
+        <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
             
             {% comment %} 
-                Loop through the form fields to render them automatically.
-                This is the best practice for Django forms.
+                Manually add password strength indicators below the password field
             {% endcomment %}
-            {% for field in form %}
-                <div class="form-group">
-                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.help_text %}
-                        <small class="form-help-text">{{ field.help_text }}</small>
-                    {% endif %}
-                    {% for error in field.errors %}
-                        <div class="error-message">{{ error }}</div>
-                    {% endfor %}
+            {% if field.id_for_label == 'id_password1' %}
+                <div class="password-strength">
+                    <div class="password-strength-bar" id="strengthBar"></div>
                 </div>
+                <div class="password-strength-text" id="strengthText"></div>
+            {% endif %}
+
+            {% if field.help_text %}
+                <small class="form-help-text">{{ field.help_text }}</small>
+            {% endif %}
+            {% for error in field.errors %}
+                <div class="error-message">{{ error }}</div>
             {% endfor %}
+        </div>
+    {% endfor %}
 
-            <button type="submit" class="submit-btn" id="submitBtn">
-                Create Account
-                <div class="loading" id="loading"></div>
-            </button>
-        </form>
-
+    <button type="submit" class="submit-btn" id="submitBtn">
+        Create Account
+        <div class="loading" id="loading"></div>
+    </button>
+</form>
         <div class="social-login">
             <div class="social-divider">
                 <span>Or continue with</span>

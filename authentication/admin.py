@@ -15,6 +15,7 @@ from django.core.exceptions import ValidationError
 import csv
 import json
 from datetime import datetime, timedelta
+from django.contrib.admin.models import LogEntry
 
 from .models import (
     CustomUser, 
@@ -27,6 +28,12 @@ from .models import (
 )
 from .signals import set_request_context, log_custom_action
 
+
+@admin.register(LogEntry)
+class LogEntryAdmin(admin.ModelAdmin):
+    list_display = ('action_time', 'user', 'content_type', 'object_repr', 'action_flag', 'change_message')
+    list_filter = ('user', 'content_type', 'action_flag')
+    search_fields = ('object_repr', 'change_message')
 
 # ---------- Custom Filters ----------
 class AccountStatusFilter(SimpleListFilter):

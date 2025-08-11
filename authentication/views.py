@@ -30,6 +30,16 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.utils.html import strip_tags
+from django.shortcuts import render, redirect
+from django.views import View
+from django.contrib import messages, auth
+from django.urls import reverse
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.conf import settings
+from django.utils.html import strip_tags
+from .models import CustomUser, OTP, AuditLog
+from .forms import EmailForm, OTPForm
 
 class RegisterView(View):
     def get(self, request):
@@ -125,3 +135,112 @@ class LogoutView(View):
              return redirect('login')
         else:
             return redirect('home')
+        
+
+# authentication/views.py
+
+
+
+class CustomLoginView(View):
+    def get(self, request):
+        email_form = EmailForm()
+        otp_form = OTPForm()
+        
+        # Determine which form to show based on session state
+        show_otp_form = 'otp_sent_to_email' in request.session
+        
+        context = {
+            'email_form': email_form,
+            'otp_form': otp_form,
+            'show_otp_form': show_otp_form
+        }
+        return render(request, 'authentication/registration/login.html', context)
+
+    def post(self, request):
+        # Step 1: Handle Email Submission
+        if 'request_otp' in request.POST:
+            email_form = EmailForm(request.POST)
+            if email_form.is_valid():
+                email = email_form.cleaned_data['email']
+                try:
+                    user = CustomUser.objects.get(email=email)
+                    
+                    if not user.is_active:
+                        messages.error(request, 'This account is not active. Please check your email for the activation link.')
+                        return redirect(reverse('login'))
+
+                    # Generate and save OTP
+                    otp_instance, otp_code = OTP.generate_otp(
+                        user=user,
+                        otp_type='login_verification',
+                        ip_address=request.META.get('REMOTE_ADDR'),
+                        user_agent=request.META.get('HTTP_USER_AGENT', '')
+                    )
+                    
+                    # Send OTP to user's email
+                    subject = 'DataHub - Your Login OTP'
+                    html_message = render_to_string(
+                        'emails/otp_login_email.html',
+                        {'user': user, 'otp_code': otp_code}
+                    )
+                    plain_message = strip_tags(html_message)
+                    send_mail(subject, plain_message, settings.DEFAULT_FROM_EMAIL, [user.email], html_message=html_message)
+
+                    # Store email in session to verify OTP later
+                    request.session['otp_sent_to_email'] = email
+                    
+                    messages.success(request, 'An OTP has been sent to your email. Please enter it below to log in.')
+                    return redirect(reverse('login'))
+
+                except CustomUser.DoesNotExist:
+                    messages.error(request, 'No account found with this email.')
+                    AuditLog.objects.create(
+                        user=None,
+                        action='login_failed_email',
+                        details={'message': f"Attempted login with non-existent email: {email}"},
+                        ip_address=request.META.get('REMOTE_ADDR'),
+                        user_agent=request.META.get('HTTP_USER_AGENT', '')
+                    )
+
+        # Step 2: Handle OTP Verification
+        elif 'verify_otp' in request.POST:
+            otp_form = OTPForm(request.POST)
+            email = request.session.get('otp_sent_to_email')
+            
+            if otp_form.is_valid() and email:
+                otp_code = otp_form.cleaned_data['otp']
+                try:
+                    user = CustomUser.objects.get(email=email)
+                    # Check if OTP is valid and not expired
+                    if OTP.verify_otp(user, otp_code):
+                        auth.login(request, user)
+                        AuditLog.objects.create(
+                            user=user,
+                            action='login_successful',
+                            details={'message': "User logged in with OTP."},
+                            ip_address=request.META.get('REMOTE_ADDR'),
+                            user_agent=request.META.get('HTTP_USER_AGENT', '')
+                        )
+                        # Clear session data after successful login
+                        del request.session['otp_sent_to_email']
+                        messages.success(request, f"Welcome back, {user.full_name}!")
+                        return redirect(settings.LOGIN_REDIRECT_URL)
+
+                    else:
+                        messages.error(request, 'Invalid or expired OTP. Please try again.')
+                        AuditLog.objects.create(
+                            user=user,
+                            action='login_failed_otp',
+                            details={'message': "Invalid or expired OTP entered."},
+                            ip_address=request.META.get('REMOTE_ADDR'),
+                            user_agent=request.META.get('HTTP_USER_AGENT', '')
+                        )
+
+                except CustomUser.DoesNotExist:
+                    messages.error(request, 'An unexpected error occurred. Please try again.')
+                    
+            else:
+                messages.error(request, 'Invalid OTP. Please try again.')
+
+        # If any form is invalid or an error occurs, re-render the page with forms
+        return redirect(reverse('login'))

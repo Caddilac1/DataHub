@@ -118,7 +118,7 @@ class RegisterView(View):
 
 
 
-class LogoutView(View):
+class CustomLogoutView(View):
     def get(self, request):
         if request.user.is_authenticated:   
              user = request.user
@@ -149,11 +149,6 @@ class LogoutView(View):
             return redirect('home')
         
 
-# authentication/views.py
-
-
-
-# authentication/views.py
 
 
 class CustomLoginView(View):
@@ -262,7 +257,7 @@ class CustomLoginView(View):
                         # Clear session data after successful login
                         del request.session['otp_sent_to_email']
                         messages.success(request, f"Welcome back, {user.full_name}!")
-                        return redirect(settings.LOGIN_REDIRECT_URL)
+                        return redirect('home')
 
                     else:
                         messages.error(request, 'Invalid or expired OTP. Please try again.')

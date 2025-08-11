@@ -9,6 +9,7 @@ from .forms import EmailLoginForm
 from .models import CustomUser
 from django.contrib import messages
 from django.contrib.auth.views import LogoutView
+from django.views.generic import View, CreateView,UpdateView, DetailView, DeleteView, ListView
 
 # Create your views here.
 def HomeView(request):
@@ -16,33 +17,10 @@ def HomeView(request):
 
 
 
-class CustomerRegisterView(FormView):
-    template_name = "register.html"
-    form_class = CustomerRegistrationForm
-    success_url = reverse_lazy("home")  
+class HomeView(View):
+    template_name = 'home/home.html'
 
-    def form_valid(self, form):
-        user = form.save()
-        login(self.request, user)
-        return super().form_valid(form)
+    def get(self, request):
+        context = {}
+        return render(request, self.template_name, context)
 
-
-
-
-
-class UserLoginView(LoginView):
-    template_name = 'login.html'
-    authentication_form = EmailLoginForm
-    redirect_authenticated_user = True
-
-    def get_success_url(self):
-        user = self.request.user
-        if user.role == 'admin':
-            return reverse_lazy('home')
-        elif user.role == 'agent':
-            return reverse_lazy('home')
-        return reverse_lazy('home')
-
-
-class UserLogoutView(LogoutView):
-    next_page = reverse_lazy('login') 

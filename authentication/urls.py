@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.auth.views import LogoutView
 from django.conf.urls.static import static
 from .views import *
+from system.views import *
 
 urlpatterns = [
    path('', HomeView, name='home'),

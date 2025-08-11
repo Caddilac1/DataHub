@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'css/register.css' %}">
+    <title>Register - DataHub</title>
+</head>
+<body>
+    <div id="particles"></div>
+
+    <div class="registration-container">
+        <div class="auth-header">
+            <h1>DataHub</h1>
+            <p>Create your account to get started</p>
+        </div>
+
+        <div id="messages">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="message {{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <form class="auth-form" id="registrationForm" method="post">
+    {% csrf_token %}
+    
+    {% for field in form %}
+        <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            
+            {% comment %} 
+                Manually add password strength indicators below the password field
+            {% endcomment %}
+            {% if field.id_for_label == 'id_password1' %}
+                <div class="password-strength">
+                    <div class="password-strength-bar" id="strengthBar"></div>
+                </div>
+                <div class="password-strength-text" id="strengthText"></div>
+            {% endif %}
+
+            {% if field.help_text %}
+                <small class="form-help-text">{{ field.help_text }}</small>
+            {% endif %}
+            {% for error in field.errors %}
+                <div class="error-message">{{ error }}</div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+
+    <button type="submit" class="submit-btn" id="submitBtn">
+        Create Account
+        <div class="loading" id="loading"></div>
+    </button>
+</form>
+        <div class="social-login">
+            <div class="social-divider">
+                <span>Or continue with</span>
+            </div>
+            
+            <button type="button" class="google-btn" id="googleSignUp">
+                <div class="google-icon"></div>
+                Sign up with Google
+            </button>
+        </div>
+
+        <div class="auth-switch">
+            <p>Already have an account?</p>
+            <a href="/login/" id="loginLink">Sign In Instead</a>
+        </div>
+    </div>
+
+    <script src="{% static 'js/register.js' %}"></script>
+    {% include 'components/messages.html' %}
+</body>
+</html>

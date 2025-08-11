@@ -2,7 +2,6 @@ from django.shortcuts import render
 from django.contrib.auth import login
 import json
 from django.views.generic.edit import FormView
-from .forms import CustomerRegistrationForm
 from django.urls import reverse_lazy
 from django.contrib.auth.views import LoginView
 from django.urls import reverse_lazy
@@ -56,23 +55,19 @@ class CustomerRegisterView(FormView):
         login(self.request, user)
         return super().form_valid(form)
 
+from django.contrib import messages
+from django.contrib.auth.views import LogoutView
+from django.views.generic import View, CreateView,UpdateView, DetailView, DeleteView, ListView
+
+# Create your views here.
 
 
 
 
-class UserLoginView(LoginView):
-    template_name = 'login.html'
-    authentication_form = EmailLoginForm
-    redirect_authenticated_user = True
+class HomeView(View):
+    template_name = 'home/home.html'
 
-    def get_success_url(self):
-        user = self.request.user
-        if user.role == 'admin':
-            return reverse_lazy('home')
-        elif user.role == 'agent':
-            return reverse_lazy('home')
-        return reverse_lazy('home')
+    def get(self, request):
+        context = {}
+        return render(request, self.template_name, context)
 
-
-class UserLogoutView(LogoutView):
-    next_page = reverse_lazy('login') 

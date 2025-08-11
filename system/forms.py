@@ -1,4 +1,4 @@
-from django import forms
+"""from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import CustomUser
 from django.contrib.auth.forms import AuthenticationForm
@@ -109,3 +109,4 @@ class SocialSignupForm(forms.ModelForm):
         self.fields['phone_number'].required = True
 
 
+        return self.user_cache  """

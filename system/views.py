@@ -1,12 +1,10 @@
 from django.shortcuts import render
 from django.contrib.auth import login
 from django.views.generic.edit import FormView
-from .forms import CustomerRegistrationForm
 from django.urls import reverse_lazy
 from django.contrib.auth.views import LoginView
 from django.urls import reverse_lazy
-from .forms import EmailLoginForm
-from .models import CustomUser
+
 from django.contrib import messages
 from django.contrib.auth.views import LogoutView
 from django.views.generic import View, CreateView,UpdateView, DetailView, DeleteView, ListView

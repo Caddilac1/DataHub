@@ -40,6 +40,18 @@ from django.conf import settings
 from django.utils.html import strip_tags
 from .models import CustomUser, OTP, AuditLog
 from .forms import EmailForm, OTPForm
+from .models import verify_otp
+from django.shortcuts import render, redirect
+from django.views import View
+from django.contrib import messages, auth
+from django.urls import reverse
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.conf import settings
+from django.utils.html import strip_tags
+from .models import CustomUser, OTP, AuditLog # Assuming you have these models
+from .forms import EmailForm, OTPForm # Assuming you have these forms
+
 
 class RegisterView(View):
     def get(self, request):
@@ -106,7 +118,7 @@ class RegisterView(View):
 
 
 
-class LogoutView(View):
+class CustomLogoutView(View):
     def get(self, request):
         if request.user.is_authenticated:   
              user = request.user
@@ -137,8 +149,6 @@ class LogoutView(View):
             return redirect('home')
         
 
-# authentication/views.py
-
 
 
 class CustomLoginView(View):
@@ -157,9 +167,19 @@ class CustomLoginView(View):
         return render(request, 'authentication/registration/login.html', context)
 
     def post(self, request):
-        # Step 1: Handle Email Submission
+        # Handle email submission (initial or resend)
         if 'request_otp' in request.POST:
-            email_form = EmailForm(request.POST)
+            # Use the email from the POST data if it's the first submission,
+            # otherwise get it from the session for a resend request.
+            email = request.POST.get('email')
+            
+            # If the email isn't in POST data, it might be a resend request
+            # from the OTP form. Get it from the session.
+            if not email:
+                email = request.session.get('otp_sent_to_email')
+
+            email_form = EmailForm({'email': email})
+
             if email_form.is_valid():
                 email = email_form.cleaned_data['email']
                 try:
@@ -169,7 +189,7 @@ class CustomLoginView(View):
                         messages.error(request, 'This account is not active. Please check your email for the activation link.')
                         return redirect(reverse('login'))
 
-                    # Generate and save OTP
+                    # Generate and save a new OTP
                     otp_instance, otp_code = OTP.generate_otp(
                         user=user,
                         otp_type='login_verification',
@@ -189,7 +209,7 @@ class CustomLoginView(View):
                     # Store email in session to verify OTP later
                     request.session['otp_sent_to_email'] = email
                     
-                    messages.success(request, 'An OTP has been sent to your email. Please enter it below to log in.')
+                    messages.success(request, 'A new OTP has been sent to your email. Please enter it below to log in.')
                     return redirect(reverse('login'))
 
                 except CustomUser.DoesNotExist:
@@ -201,8 +221,13 @@ class CustomLoginView(View):
                         ip_address=request.META.get('REMOTE_ADDR'),
                         user_agent=request.META.get('HTTP_USER_AGENT', '')
                     )
+            
+            # If the email form is invalid (e.g., empty email), it's the initial submission.
+            # Rerender the page with the error messages.
+            messages.error(request, 'Invalid email address or account not found.')
+            return redirect(reverse('login'))
 
-        # Step 2: Handle OTP Verification
+        # Handle OTP Verification
         elif 'verify_otp' in request.POST:
             otp_form = OTPForm(request.POST)
             email = request.session.get('otp_sent_to_email')
@@ -211,8 +236,16 @@ class CustomLoginView(View):
                 otp_code = otp_form.cleaned_data['otp']
                 try:
                     user = CustomUser.objects.get(email=email)
+                    
+                    # Find the most recent active OTP for this user and type
+                    latest_otp = OTP.objects.filter(
+                        user=user, 
+                        otp_type='login_verification',
+                        status='active'
+                    ).order_by('-created_at').first()
+
                     # Check if OTP is valid and not expired
-                    if OTP.verify_otp(user, otp_code):
+                    if latest_otp and latest_otp.verify_code(otp_code):
                         auth.login(request, user)
                         AuditLog.objects.create(
                             user=user,
@@ -224,7 +257,7 @@ class CustomLoginView(View):
                         # Clear session data after successful login
                         del request.session['otp_sent_to_email']
                         messages.success(request, f"Welcome back, {user.full_name}!")
-                        return redirect(settings.LOGIN_REDIRECT_URL)
+                        return redirect('home')
 
                     else:
                         messages.error(request, 'Invalid or expired OTP. Please try again.')

@@ -151,10 +151,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 JAZZMIN_SETTINGS = {
     "site_title": "Welcome to Datahub Admin",
     #"site_logo": "static/image/badge.png",  # Path to your logo image
-    "site_header":  "Cadditech Solutions",
-    "site_brand": "Cadditech Solutions", 
+    "site_header":  "DataHub Admin",
+    "site_brand": "DataHub", 
     "welcome_sign": "Welcome to Datahub Admin",
-    "copyright": "cadditech",
+    "copyright": "datahub",
     "show_sidebar": True,
     "navigation_expanded": True,
     "topmenu_links": [

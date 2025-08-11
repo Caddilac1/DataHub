@@ -31,6 +31,13 @@
                 {% endfor %}
                 <button type="submit" name="verify_otp" class="submit-btn">Verify OTP & Log In</button>
             </form>
+            
+            <form method="post" class="resend-otp-form">
+                {% csrf_token %}
+                <input type="hidden" name="email" value="{{ request.session.otp_sent_to_email }}">
+                <button type="submit" name="request_otp" class="resend-otp-btn">Resend OTP</button>
+            </form>
+            
         {% else %}
             <form method="post" class="auth-form">
                 {% csrf_token %}

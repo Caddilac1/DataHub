@@ -8,9 +8,9 @@ class CustomUserAdmin(UserAdmin):
     list_display = ('email', 'full_name', 'phone_number', 'role', 'is_staff', 'is_active')
     list_filter = ('role', 'is_staff', 'is_active')
 
-    # Fields for the add/edit user forms in admin
+    # Fields for the edit user form
     fieldsets = (
-        (None, {'fields': ('username', 'email', 'password')}),
+        (None, {'fields': ('email', 'password')}),
         ('Personal Info', {'fields': ('full_name', 'phone_number')}),
         ('Roles & Permissions', {'fields': ('role', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
@@ -21,7 +21,6 @@ class CustomUserAdmin(UserAdmin):
         (None, {
             'classes': ('wide',),
             'fields': (
-                'username',
                 'email',
                 'full_name',
                 'phone_number',
@@ -35,9 +34,8 @@ class CustomUserAdmin(UserAdmin):
         }),
     )
 
-    search_fields = ('username', 'email', 'full_name', 'phone_number')
+    search_fields = ('email', 'full_name', 'phone_number')
     ordering = ('email',)
-
 
 @admin.register(Telco)
 class TelcoAdmin(admin.ModelAdmin):

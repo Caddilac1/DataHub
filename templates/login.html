@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 {% load static %}
+{% load socialaccount %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -87,7 +88,7 @@
             </div>
             
             <!-- Google Sign In Button -->
-            <button type="button" class="google-btn" id="googleSignIn">
+            <button onclick="window.location.href = '{% provider_login_url 'google' %}' " type="button" class="login-with-google-btn" id="googleSignIn">
                 <div class="google-icon"></div>
                 Continue with Google
             </button>

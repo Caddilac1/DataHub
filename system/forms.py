@@ -93,3 +93,19 @@ class EmailLoginForm(forms.Form):
 
     def get_user(self):
         return self.user_cache
+
+
+
+
+
+class SocialSignupForm(forms.ModelForm):
+    class Meta:
+        model = CustomUser
+        fields = ['full_name', 'phone_number']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['full_name'].required = True
+        self.fields['phone_number'].required = True
+
+

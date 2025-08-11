@@ -394,22 +394,12 @@
             position: relative;
             overflow: visible;
             animation: cardSlideIn 0.8s ease-out both;
+            cursor: default;
         }
 
         .network-card:nth-child(1) { animation-delay: 0.1s; }
         .network-card:nth-child(2) { animation-delay: 0.3s; }
         .network-card:nth-child(3) { animation-delay: 0.5s; }
-
-        @keyframes cardSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(50px) scale(0.9);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
 
         .network-card:hover {
             transform: translateY(-8px) scale(1.02);
@@ -425,12 +415,12 @@
             height: 100%;
             background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
             transition: left 0.6s ease;
+            pointer-events: none;
         }
 
         .network-card:hover::before {
             left: 100%;
         }
-
         /* Enhanced Stock Status Badge */
         .stock-status {
             position: absolute;
@@ -524,8 +514,8 @@
         }
 
         .mtn { background: linear-gradient(45deg, #FFCC00, #FFD700); color: #000; }
-        .airteltigo { background: linear-gradient(45deg, #E60012, #FF4444); }
-        .telecel { background: linear-gradient(45deg, #0066CC, #4488FF); }
+        .telecel { background: linear-gradient(45deg, #E60012, #FF4444); }
+        .airteltigo { background: linear-gradient(45deg, #0066CC, #4488FF); }
 
         .network-name {
             font-size: 1.6rem;
@@ -1064,6 +1054,150 @@
             color: #721c24;
             border: 2px solid #dc3545;
         }
+
+        /* Navbar Styles */
+.navbar {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 15px 30px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    animation: slideInDown 0.8s ease-out;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: white;
+    font-weight: bold;
+    font-size: 1.3rem;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.navbar-brand::before {
+    content: "📊";
+    font-size: 1.5rem;
+}
+
+.navbar-menu {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.navbar-item {
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+    padding: 8px 15px;
+    border-radius: 15px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.navbar-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.2);
+    transition: left 0.3s ease;
+}
+
+.navbar-item:hover::before {
+    left: 100%;
+}
+
+.navbar-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.navbar-item.active {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.navbar-profile {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.profile-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #4CAF50, #45a049);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.profile-avatar:hover {
+    transform: scale(1.1);
+    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+}
+
+.logout-btn {
+    background: rgba(255, 107, 107, 0.9);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 15px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.logout-btn:hover {
+    background: rgba(255, 107, 107, 1);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+}
+
+.hidden-notices .warning-notice,
+.hidden-notices .service-notice {
+    display: none;
+}
+
+/* Mobile responsive navbar */
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        gap: 15px;
+        padding: 20px;
+    }
+    
+    .navbar-menu {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    .navbar-item {
+        padding: 6px 12px;
+        font-size: 0.9rem;
+    }
+}
 
         /* Responsive Design */
         @media (max-width: 768px) {

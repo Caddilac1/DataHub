@@ -180,7 +180,7 @@ class CustomLoginView(View):
                     # Send OTP to user's email
                     subject = 'DataHub - Your Login OTP'
                     html_message = render_to_string(
-                        'emails/otp_login_email.html',
+                        'authentication/emails/otp_login_email.html',
                         {'user': user, 'otp_code': otp_code}
                     )
                     plain_message = strip_tags(html_message)

@@ -411,7 +411,7 @@ class TelcoAdmin(admin.ModelAdmin):
 @admin.register(Bundle)
 class BundleAdmin(admin.ModelAdmin):
     list_display = (
-        'telco', 'name', 'size_mb', 'price', 'stock_status_badge', 
+        'telco', 'name','is_instock','is_limited', 'size_mb', 'price', 'stock_status_badge', 
         'is_active_badge', 'order_count', 'created_at'
     )
     list_filter = ('telco', 'name', 'is_instock', 'is_active', RecentActivityFilter)

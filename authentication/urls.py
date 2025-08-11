@@ -7,6 +7,6 @@ from .views import *
 from system.views import *
 
 urlpatterns = [
-   path('', HomeView, name='home'),
+   path('', RegisterView, name='register'),
    
 ]

@@ -73,8 +73,6 @@ class CustomUser(AbstractUser):
         ('suspended', 'Suspended'),
         ('deactivated', 'Deactivated'),
     ]
-
-    username = None
     full_name = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=15, unique=True)
     email = models.EmailField(unique=True)

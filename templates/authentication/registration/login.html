@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - DataHub</title>
+</head>
+<body>
+    <div class="login-container">
+        <h1>DataHub Login</h1>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="message {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        {% if show_otp_form %}
+            <form method="post" class="auth-form">
+                {% csrf_token %}
+                <p>An OTP has been sent to your email.</p>
+                {% for field in otp_form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}
+                            <div class="error-message">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+                <button type="submit" name="verify_otp" class="submit-btn">Verify OTP & Log In</button>
+            </form>
+        {% else %}
+            <form method="post" class="auth-form">
+                {% csrf_token %}
+                {% for field in email_form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}
+                            <div class="error-message">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+                <button type="submit" name="request_otp" class="submit-btn">Request OTP</button>
+            </form>
+        {% endif %}
+
+        <p class="auth-switch">Don't have an account? <a href="{% url 'register' %}">Sign Up</a></p>
+    </div>
+    {% include 'components/messages.html' %}
+</body>
+</html>

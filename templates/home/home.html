@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <title>DataHub - Your Data Connection</title>
+    
+</head>
+<body>
+    <div class="container">
+        <!-- Floating Particles -->
+        <div id="particles"></div>
+
+        <!-- Header with Enhanced Greeting -->
+        <div class="header fade-in-up">
+            <h1>DataHub</h1>
+            <div class="greeting" id="greeting">Welcome to DataHub!</div>
+            <p>Your Reliable Data Connection Partner in Ghana</p>
+        </div>
+
+        <form action="{% url 'logout' %}" method="post">
+    {% csrf_token %}
+    <button type="submit">Logout</button>
+</form>
+
+
+        <!-- Warning Notice -->
+        <div class="warning-notice fade-in-up">
+            <h3>⚠️ STRICT POLICY: NO SOCIAL MEDIA ADVERTISING</h3>
+            <p><strong>We do NOT allow social media advertisements of our services. If we find this page or our services advertised on your social media accounts, your account will be PERMANENTLY DELETED from our system without warning.</strong></p>
+            <p>This policy is strictly enforced to maintain service quality and prevent abuse. No exceptions will be made.</p>
+            
+            <h3 style="margin-top: 15px;">Important Notice</h3>
+            <p>Turbonet and Broadband Sim Cards are <strong>not eligible for this offer</strong>.</p>
+            <ul>
+                <li>Please do not place orders for the same number at the same time interval. One will be rejected and <strong>no refund will be provided</strong>.</li>
+                <li>Data bundle delivery is not instant. Some numbers may receive data faster while others take some time.</li>
+                <li>No refunds will be issued for wrong transactions or incorrect phone numbers.</li>
+                <li>Please verify your phone number carefully before making a purchase.</li>
+            </ul>
+        </div>
+
+        <!-- Service Notice -->
+        <div class="service-notice fade-in-up">
+            <h3>Important Service Notice</h3>
+            <p><strong>Please Note Before Proceeding:</strong></p>
+            <ul>
+                <li>This is <strong>not an instant service</strong>. Data delivery times vary between customers.</li>
+                <li>We are working diligently to process all orders, but there may be delays.</li>
+                <li>If you need immediate data for urgent matters, please dial <strong>*138#</strong> on your MTN line instead.</li>
+                <li>Once ordered, please be patient as we process your request.</li>
+                <li>For instant bundles, this service is not suitable.</li>
+            </ul>
+            <p style="margin-top: 10px;"><em>We value your business and are committed to delivering quality service. Thank you for your understanding and patience.</em></p>
+        </div>
+
+        <!-- Navigation -->
+        <div class="nav">
+            <button class="nav-btn active" data-tab="dashboard">Dashboard</button>
+            <button class="nav-btn" data-tab="orders">Recent Orders</button>
+            <button class="nav-btn" data-tab="history">Order History</button>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div class="content-section active" id="dashboard">
+            <div class="dashboard">
+                <!-- MTN Card -->
+                <div class="network-card" id="mtn-card">
+                    <div class="stock-status stock-in">IN STOCK</div>
+                    <div class="network-header">
+                        <div class="network-logo mtn">MTN</div>
+                        <div class="network-name">MTN Ghana</div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-number" data-target="156">0</div>
+                            <div class="stat-label">Orders Today</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" data-target="98.5">0</div>
+                            <div class="stat-label">Success Rate</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">2.3s</div>
+                            <div class="stat-label">Avg Processing</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">24/7</div>
+                            <div class="stat-label">Available</div>
+                        </div>
+                    </div>
+                    <button class="buy-btn" onclick="openModal('MTN')">Buy Data Bundle</button>
+                </div>
+
+                <!-- AirtelTigo Card -->
+                <div class="network-card limited-stock" id="airteltigo-card">
+                    <div class="stock-status stock-limited">LIMITED</div>
+                    <div class="network-header">
+                        <div class="network-logo airteltigo">AT</div>
+                        <div class="network-name">AirtelTigo</div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-number" data-target="89">0</div>
+                            <div class="stat-label">Orders Today</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" data-target="96.8">0</div>
+                            <div class="stat-label">Success Rate</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">3.1s</div>
+                            <div class="stat-label">Avg Processing</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">24/7</div>
+                            <div class="stat-label">Available</div>
+                        </div>
+                    </div>
+                    <button class="buy-btn" onclick="openModal('AirtelTigo')">Buy Data Bundle</button>
+                </div>
+
+                <!-- Telecel Card -->
+                <div class="network-card out-of-stock" id="telecel-card">
+                    <div class="stock-status stock-out">OUT OF STOCK</div>
+                    <div class="network-header">
+                        <div class="network-logo telecel">TEL</div>
+                        <div class="network-name">Telecel Ghana</div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-number" data-target="72">0</div>
+                            <div class="stat-label">Orders Today</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" data-target="97.2">0</div>
+                            <div class="stat-label">Success Rate</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">2.8s</div>
+                            <div class="stat-label">Avg Processing</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">24/7</div>
+                            <div class="stat-label">Available</div>
+                        </div>
+                    </div>
+                    <button class="buy-btn" disabled onclick="openModal('Telecel')">Currently Unavailable</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Orders Section -->
+        <div class="content-section" id="orders">
+            <div class="orders-section">
+                <h2>📋 Recent Orders (Last 24 Hours)</h2>
+                <div style="overflow-x: auto;">
+                    <table class="orders-table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Network</th>
+                                <th>Phone Number</th>
+                                <th>Data Size</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Date & Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>#DH001234</td>
+                                <td>MTN</td>
+                                <td>0244******89</td>
+                                <td>1GB</td>
+                                <td>GH₵ 8.00</td>
+                                <td><span class="status-badge status-success">Completed</span></td>
+                                <td>2024-11-15 14:23</td>
+                            </tr>
+                            <tr>
+                                <td>#DH001235</td>
+                                <td>AirtelTigo</td>
+                                <td>0267******45</td>
+                                <td>500MB</td>
+                                <td>GH₵ 5.50</td>
+                                <td><span class="status-badge status-pending">Processing</span></td>
+                                <td>2024-11-15 14:18</td>
+                            </tr>
+                            <tr>
+                                <td>#DH001236</td>
+                                <td>Telecel</td>
+                                <td>0207******12</td>
+                                <td>2GB</td>
+                                <td>GH₵ 14.00</td>
+                                <td><span class="status-badge status-success">Completed</span></td>
+                                <td>2024-11-15 14:15</td>
+                            </tr>
+                            <tr>
+                                <td>#DH001237</td>
+                                <td>MTN</td>
+                                <td>0244******67</td>
+                                <td>5GB</td>
+                                <td>GH₵ 25.00</td>
+                                <td><span class="status-badge status-failed">Failed</span></td>
+                                <td>2024-11-15 14:10</td>
+                            </tr>
+                            <tr>
+                                <td>#DH001238</td>
+                                <td>AirtelTigo</td>
+                                <td>0267******90</td>
+                                <td>1GB</td>
+                                <td>GH₵ 9.00</td>
+                                <td><span class="status-badge status-success">Completed</span></td>
+                                <td>2024-11-15 14:05</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order History Section -->
+        <div class="content-section" id="history">
+            <div class="orders-section">
+                <h2>📚 Complete Order History</h2>
+                <div style="overflow-x: auto;">
+                    <table class="orders-table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Network</th>
+                                <th>Phone Number</th>
+                                <th>Data Size</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Date & Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>#DH001220</td>
+                                <td>MTN</td>
+                                <td>0244******33</td>
+                                <td>10GB</td>
+                                <td>GH₵ 45.00</td>
+                                <td><span class="status-badge status-success">Completed</span></td>
+                                <td>2024-11-14 16:45</td>
+                            </tr>
+                            <tr>
+                                <td>#DH001221</td>
+                                <td>Telecel</td>
+                                <td>0207******77</td>
+                                <td>5GB</td>
+                                <td>GH₵ 30.00</td>
+                                <td><span class="status-badge status-success">Completed</span></td>
+                                <td>2024-11-14 15:20</td>
+                            </tr>
+                            <tr>
+                                <td>#DH001222</td>
+                                <td>AirtelTigo</td>
+                                <td>0267******88</td>
+                                <td>2GB</td>
+                                <td>GH₵ 15.00</td>
+                                <td><span class="status-badge status-failed">Failed</span></td>
+                                <td>2024-11-14 13:10</td>
+                            </tr>
+                            <tr>
+                                <td>#DH001223</td>
+                                <td>MTN</td>
+                                <td>0244******11</td>
+                                <td>1GB</td>
+                                <td>GH₵ 8.00</td>
+                                <td><span class="status-badge status-success">Completed</span></td>
+                                <td>2024-11-14 11:30</td>
+                            </tr>
+                            <tr>
+                                <td>#DH001224</td>
+                                <td>Telecel</td>
+                                <td>0207******55</td>
+                                <td>15GB</td>
+                                <td>GH₵ 75.00</td>
+                                <td><span class="status-badge status-success">Completed</span></td>
+                                <td>2024-11-13 18:22</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Purchase Modal -->
+    <div class="modal" id="purchaseModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h3 id="modalTitle">Purchase Data Bundle</h3>
+            
+            <div class="modal-notice">
+                <strong>⚠️ Important Reminders:</strong><br>
+                • Double-check your phone number before purchasing<br>
+                • Data delivery is <strong>not instant</strong> - please be patient<br>
+                • No refunds for wrong numbers or duplicate orders
+            </div>
+            
+            <div class="data-plans" id="dataPlans">
+                <!-- Plans will be populated by JavaScript -->
+            </div>
+
+            <input type="tel" class="phone-input" id="phoneInput" placeholder="Enter phone number (must start with 0)" maxlength="10">
+            <div class="input-error" id="phoneError" style="display: none;"></div>
+            
+            <div id="selectedPlan" style="display: none; background: linear-gradient(135deg, #e8f5e8, #d4edda); padding: 20px; border-radius: 15px; margin-bottom: 25px; border: 2px solid #4CAF50;">
+                <div style="font-weight: bold; margin-bottom: 8px; color: #2c3e50;">Selected Plan:</div>
+                <div id="selectedPlanDetails"></div>
+            </div>
+
+            <button class="purchase-btn" id="purchaseBtn" onclick="processPurchase()" disabled>
+                Complete Purchase
+            </button>
+        </div>
+    </div>
+
+
+    <script src="{% static 'js/home.js' %}"></script>
+    {% include 'components/messages.html' %}
+
+    
+</body>
+</html>

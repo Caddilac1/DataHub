@@ -1,4 +1,4 @@
-from django import forms
+"""from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import CustomUser
 from django.contrib.auth.forms import AuthenticationForm
@@ -92,4 +92,4 @@ class EmailLoginForm(forms.Form):
             )
 
     def get_user(self):
-        return self.user_cache
+        return self.user_cache  """

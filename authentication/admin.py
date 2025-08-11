@@ -743,3 +743,10 @@ class AuditLogAdmin(admin.ModelAdmin):
         ])
         
         for log in queryset.select_related('user'):
+            details = json.dumps(log.details, indent=2, default=str) if log.details else 'No details'
+            writer.writerow([
+                log.id, log.user.email if log.user else 'System', log.action,
+                log.ip_address, log.created_at, details
+            ])
+        return response
+    export_audit_logs.short_description = "Export selected audit logs to CSV"       

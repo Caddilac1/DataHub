@@ -3,6 +3,7 @@
 from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ValidationError
 from .models import CustomUser
+from .models import *
 
 class CustomUserCreationForm(UserCreationForm):
     class Meta:
@@ -39,3 +40,30 @@ class CustomUserCreationForm(UserCreationForm):
         if commit:
             user.save()
         return user
+    
+
+# authentication/forms.py
+
+from django import forms
+from django.core.exceptions import ValidationError
+from .models import CustomUser
+
+class EmailForm(forms.Form):
+    email = forms.EmailField(
+        label="Email Address",
+        max_length=254,
+        widget=forms.EmailInput(attrs={'placeholder': 'Enter your email address', 'class': 'form-input'})
+    )
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if not CustomUser.objects.filter(email=email).exists():
+            raise ValidationError("No account found with this email address.")
+        return email
+
+class OTPForm(forms.Form):
+    otp = forms.CharField(
+        label="OTP",
+        max_length=6,
+        widget=forms.TextInput(attrs={'placeholder': 'Enter 6-digit OTP', 'class': 'form-input'})
+    )

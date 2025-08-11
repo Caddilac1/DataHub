@@ -9,7 +9,7 @@ from django.contrib.auth import login
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
-from .models import User
+from .models import CustomUser
 from django.db.models import Q, Count, Avg, Sum
 from django.utils import timezone
 from datetime import datetime, timedelta
@@ -49,7 +49,7 @@ class LogoutView(View):
             )
              create_log_entry(
                 user=request.user,
-                content_type=ContentType.objects.get_for_model(User),
+                content_type=ContentType.objects.get_for_model(CustomUser),
                 object_id=request.user.pk,
                 object_repr=str(request.user),
                 action_flag=2,  # CHANGE action

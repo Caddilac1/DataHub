@@ -11,6 +11,7 @@ from django.conf import settings
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.contrib.auth.hashers import make_password, check_password
+from .managers import CustomUserManager
 
 
 # ---------- Helper Functions ----------
@@ -59,7 +60,8 @@ def generate_audit_id():
 
 # ---------- Custom User Model ----------
 class CustomUser(AbstractUser):
-    id = models.CharField(primary_key=True, max_length=20, default=generate_user_id, editable=False)
+    id = models.CharField(primary_key=True, unique=True, max_length=20, default=generate_user_id, editable=False)
+    username = None 
 
     ROLE_CHOICES = [
         ('customer', 'Customer'),
@@ -89,6 +91,8 @@ class CustomUser(AbstractUser):
     account_locked_until = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = CustomUserManager() 
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['full_name', 'phone_number']
@@ -187,7 +191,7 @@ class CustomUser(AbstractUser):
 
 # ---------- OTP Model ----------
 class OTP(models.Model):
-    id = models.CharField(primary_key=True, max_length=20, default=generate_otp_id, editable=False)
+    id = models.CharField(primary_key=True, unique=True, max_length=20, default=generate_otp_id, editable=False)
     
     OTP_TYPE_CHOICES = [
         ('email_verification', 'Email Verification'),
@@ -310,7 +314,7 @@ class OTP(models.Model):
 
 # ---------- Existing Models (Enhanced with Security) ----------
 class Telco(models.Model):
-    id = models.CharField(primary_key=True, max_length=20, default=generate_telco_id, editable=False)
+    id = models.CharField(primary_key=True,unique=True, max_length=20, default=generate_telco_id, editable=False)
     name = models.CharField(max_length=50)
     code = models.CharField(max_length=20, unique=True)
     is_active = models.BooleanField(default=True)
@@ -337,7 +341,7 @@ class Telco(models.Model):
 
 
 class Bundle(models.Model):
-    id = models.CharField(primary_key=True, max_length=20, default=generate_bundle_id, editable=False)
+    id = models.CharField(primary_key=True,unique=True, max_length=20, default=generate_bundle_id, editable=False)
 
     NAME_CHOICES = [
         ('mtnup2u', 'MTNUP2U'),
@@ -390,7 +394,7 @@ class Bundle(models.Model):
 
 
 class DataBundleOrder(models.Model):
-    id = models.CharField(primary_key=True, max_length=20, default=generate_order_id, editable=False)
+    id = models.CharField(primary_key=True,unique=True, max_length=20, default=generate_order_id, editable=False)
 
     STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -433,7 +437,7 @@ class DataBundleOrder(models.Model):
 
 
 class Payment(models.Model):
-    id = models.CharField(primary_key=True, max_length=20, default=generate_payment_id, editable=False)
+    id = models.CharField(primary_key=True, unique=True, max_length=20, default=generate_payment_id, editable=False)
 
     PAYMENT_STATUS = [
         ('pending', 'Pending'),
@@ -477,7 +481,7 @@ class Payment(models.Model):
 
 # ---------- Audit Log Model (Optional but Recommended) ----------
 class AuditLog(models.Model):
-    id = models.CharField(primary_key=True, max_length=20, default=generate_audit_id, editable=False)
+    id = models.CharField(primary_key=True, unique=True, max_length=20, default=generate_audit_id, editable=False)
     
     ACTION_CHOICES = [
         ('user_created', 'User Created'),

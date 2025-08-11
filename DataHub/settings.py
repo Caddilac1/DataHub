@@ -96,7 +96,7 @@ DATABASES = {
     }
 }
 
-AUTH_USER_MODEL = 'system.CustomUser'
+AUTH_USER_MODEL = 'authentication.CustomUser'
 
 
 

@@ -361,6 +361,7 @@
     window.userFullName = "{{ request.user.full_name|escapejs }}";
 </script>
     <script src="{% static 'js/home.js' %}"></script>
+     {% include 'components/messages.html' %}
 
     
 </body>

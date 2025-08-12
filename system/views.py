@@ -4,13 +4,15 @@ import json
 from django.urls import reverse_lazy
 from django.views import View
 from django.contrib import messages
+from django.db.models import Count, Q
+from django.views.generic import ListView
 from django.views.generic import TemplateView
 from authentication.models import *
 # Create your views here.
 
 
 class HomeView(TemplateView):
-    template_name = 'home.html'
+    template_name = 'home/home.html'
 
     def get(self, request, *args, **kwargs):
         bundles = Bundle.objects.select_related('telco').all().order_by('telco__name', 'size_mb')
@@ -54,3 +56,28 @@ class HomeView(TemplateView):
         return render(request, self.template_name, context)
 
 """
+
+
+class TelcoStockListView(ListView):
+    model = Telco
+    template_name = "telcos.html"
+    context_object_name = "telcos"
+
+    def get_queryset(self):
+        # Annotate each Telco with counts of in-stock and out-of-stock bundles
+        return Telco.objects.annotate(
+            total_bundles=Count('bundle'),
+            in_stock_bundles=Count('bundle', filter=Q(bundle__is_instock=True)),
+            out_stock_bundles=Count('bundle', filter=Q(bundle__is_instock=False)),
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        for telco in context["telcos"]:
+            if telco.in_stock_bundles == telco.total_bundles and telco.total_bundles > 0:
+                telco.stock_status = "in-stock"
+            elif telco.in_stock_bundles > 0:
+                telco.stock_status = "limited"
+            else:
+                telco.stock_status = "out-of-stock"
+        return context

@@ -24,12 +24,15 @@ from .signals import set_request_context, log_custom_action
 
 
 # --- General Admin Configuration ---
+# --- General Admin Configuration ---
 @admin.register(LogEntry)
 class LogEntryAdmin(admin.ModelAdmin):
     list_display = ('action_time', 'user', 'content_type', 'object_repr', 'action_flag', 'change_message')
     list_filter = ('user', 'content_type', 'action_flag')
     search_fields = ('object_repr', 'change_message')
 
+
+# --- Custom Filters ---
 
 # --- Custom Filters ---
 class AccountStatusFilter(SimpleListFilter):
@@ -317,7 +320,7 @@ class OTPAdmin(admin.ModelAdmin):
         'attempts', 'max_attempts', 'expires_at', 'created_at'
     )
     list_filter = (OTPStatusFilter, 'otp_type', RecentActivityFilter)
-    search_fields = ('user__email', 'user__full_name', 'id')
+    search_fields = ('user_email', 'user_full_name', 'id')
     readonly_fields = (
         'id', 'hashed_code', 'used_at', 'created_at', 'updated_at',
         'ip_address', 'user_agent'
@@ -654,7 +657,7 @@ class PaymentAdmin(admin.ModelAdmin):
         'status_badge', 'reference', 'paid_at', 'created_at'
     )
     list_filter = (PaymentStatusFilter, RecentActivityFilter)
-    search_fields = ('id', 'reference', 'order__user__email', 'order__phone_number')
+    search_fields = ('id', 'reference', 'order_useremail', 'order_phone_number')
     readonly_fields = (
         'id', 'reference', 'paid_at', 'created_at', 'updated_at',
         'ip_address', 'user_agent'

@@ -1155,6 +1155,25 @@
     box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
 }
 
+.login-btn {
+    background: rgba(107, 110, 255, 0.9);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 15px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.login-btn:hover {
+    background: rgba(107, 110, 255, 0.9);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(107, 110, 255, 0.3);
+}
+
 .logout-btn {
     background: rgba(255, 107, 107, 0.9);
     color: white;

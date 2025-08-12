@@ -2,13 +2,13 @@
 import requests
 from django.conf import settings
 
-PAYSTACK_API_BASE_URL = 'https://api.paystack.com'
+PAYSTACK_API_BASE_URL = 'https://api.paystack.co'
 
 def initialize_paystack_payment(email, amount, reference, callback_url):
     """Initializes a new transaction with Paystack."""
     url = f'{PAYSTACK_API_BASE_URL}/transaction/initialize'
     headers = {
-        'Authorization': f'Bearer {settings.PAYSTACK_SECRET_KEY}',
+        'Authorization': f'Bearer {settings.TEST_SECRET_KEY}',
         'Content-Type': 'application/json',
     }
     payload = {
@@ -26,7 +26,7 @@ def verify_paystack_payment(reference):
     """Verifies a transaction with Paystack."""
     url = f'{PAYSTACK_API_BASE_URL}/transaction/verify/{reference}'
     headers = {
-        'Authorization': f'Bearer {settings.PAYSTACK_SECRET_KEY}',
+        'Authorization': f'Bearer {settings.TEST_SECRET_KEY}',
     }
     
     response = requests.get(url, headers=headers)

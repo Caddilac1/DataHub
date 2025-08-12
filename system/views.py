@@ -18,9 +18,10 @@ from django.urls import reverse
 from django.db import transaction
 from django.views.generic import View, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .models import Bundle, DataBundleOrder, Payment
+from authentication.models import Bundle, DataBundleOrder, Payment
 from .services import initialize_paystack_payment, verify_paystack_payment
 import logging
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -136,7 +137,8 @@ class TestHomeView(LoginRequiredMixin, TemplateView):
             })
         
         context['data_plans'] = data_plans
-        context['paystack_public_key'] = 'your_paystack_public_key'
+        context['paystack_public_key'] = settings.TEST_PUBLIC_KEY  # Use the test public key for client-side integration
+        context['user'] = self.request.user  # Pass the user object to the template for
         
         return context
     
@@ -144,17 +146,7 @@ class TestHomeView(LoginRequiredMixin, TemplateView):
 
 # home/views.py
 
-# --- Existing TemplateView for the Dashboard ---
-class DashboardView(LoginRequiredMixin, TemplateView):
-    template_name = 'home/dashboard.html'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        bundles = Bundle.objects.all().order_by('telco__name', 'price')
-        context['data_bundles'] = bundles
-        # Pass the public key to the template
-        context['paystack_public_key'] = 'your_paystack_public_key'
-        return context
 
 # --- New Class-Based View for Payment Logic ---
 class PaymentView(LoginRequiredMixin, View):
@@ -257,4 +249,4 @@ class PaymentView(LoginRequiredMixin, View):
                 
         except Exception as e:
             logger.error(f"Error during payment verification for reference {reference}: {e}", exc_info=True)
-            return redirect(reverse('dashboard') + f'?payment_status=error&message={str(e)}')
+            return redirect(reverse('home') + f'?payment_status=error&message={str(e)}')

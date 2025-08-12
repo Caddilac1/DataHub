@@ -164,7 +164,7 @@ class CustomLoginView(View):
             'otp_form': otp_form,
             'show_otp_form': show_otp_form
         }
-        return render(request, 'authentication/registration/login.html', context)
+        return render(request, 'authentication/registration/login2.html', context)
 
     def post(self, request):
         # Handle email submission (initial or resend)
@@ -246,7 +246,7 @@ class CustomLoginView(View):
 
                     # Check if OTP is valid and not expired
                     if latest_otp and latest_otp.verify_code(otp_code):
-                        auth.login(request, user)
+                        auth.login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                         AuditLog.objects.create(
                             user=user,
                             action='login_successful',

@@ -212,7 +212,7 @@ class PaymentView(LoginRequiredMixin, View):
         """
         reference = request.GET.get('reference')
         if not reference:
-            return redirect(reverse('dashboard') + '?payment_status=failed&message=Invalid payment reference')
+            return redirect(reverse('test_home') + '?payment_status=failed&message=Invalid payment reference')
             
         try:
             paystack_response = verify_paystack_payment(reference)
@@ -232,7 +232,7 @@ class PaymentView(LoginRequiredMixin, View):
                     # Log successful payment for internal records
                     logger.info(f"Payment successful for order {order.id}. Reference: {reference}")
                     
-                return redirect(reverse('dashboard') + f'?payment_status=success&order_id={order.id}')
+                return redirect(reverse('test_home') + f'?payment_status=success&order_id={order.id}')
             else:
                 payment = get_object_or_404(Payment, reference=reference)
                 order = payment.order
@@ -245,8 +245,8 @@ class PaymentView(LoginRequiredMixin, View):
                 
                 logger.warning(f"Payment failed for order {order.id}. Paystack status: {paystack_response['data']['status']}")
                 
-                return redirect(reverse('dashboard') + '?payment_status=failed')
+                return redirect(reverse('test_home') + '?payment_status=failed')
                 
         except Exception as e:
             logger.error(f"Error during payment verification for reference {reference}: {e}", exc_info=True)
-            return redirect(reverse('home') + f'?payment_status=error&message={str(e)}')
+            return redirect(reverse('test_home') + f'?payment_status=error&message={str(e)}')

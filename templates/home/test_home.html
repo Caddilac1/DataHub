@@ -223,7 +223,8 @@
                     </div>
                 {% endfor %}
             </div>
-
+            <form method="post" action="." data-payment-url="{% url 'payment_initiate' %}">
+                {% csrf_token %}
             <input type="tel" class="phone-input" id="phoneInput" placeholder="Enter phone number (must start with 0)" maxlength="10">
             <div class="input-error" id="phoneError" style="display: none;"></div>
             
@@ -232,9 +233,10 @@
                 <div id="selectedPlanDetails"></div>
             </div>
 
-            <button class="purchase-btn" id="purchaseBtn" onclick="processPurchase()" disabled>
+            <button class="purchase-btn" id="purchaseBtn" onclick="processPurchase(event)" disabled>
                 Complete Purchase
             </button>
+            </form>
         </div>
     </div>
 
@@ -242,8 +244,577 @@
         // Data is now rendered directly in the template, no need for JSON variable
         // The purchase modal will require some JS to function, but it won't be using the JSON data.
         // It will need to handle the phone number input and selected plan logic.
-        const dataPlans = {}; // Placeholder, as we are no longer using the JSON.
-        window.userFullName = "{{ request.user.full_name|escapejs }}";
+        // Global variables
+let selectedNetwork = '';
+let selectedPlan = null;
+const purchaseModal = document.getElementById('purchaseModal');
+const purchaseForm = document.getElementById('purchaseForm');
+const closeBtn = document.querySelector('.modal .close-btn');
+
+// Stock status simulation (remains a JS-based mock for now)
+const stockStatuses = {
+    'MTN': 'in-stock',
+    'AirtelTigo': 'limited',
+    'Telecel': 'out-of-stock'
+};
+
+// Create floating particles
+function createParticles() {
+    const particlesContainer = document.getElementById('particles');
+    if (!particlesContainer) return;
+    for (let i = 0; i < 6; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + 'vw';
+        particle.style.width = Math.random() * 8 + 4 + 'px';
+        particle.style.height = particle.style.width;
+        particle.style.animationDelay = Math.random() * 15 + 's';
+        particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+        particlesContainer.appendChild(particle);
+    }
+}
+
+// Animate counting numbers
+function animateCountUp(element, target, duration = 2000) {
+    const start = 0;
+    const startTime = performance.now();
+    const isDecimal = target.toString().includes('.');
+    
+    function updateCount(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const current = start + (target - start) * easeOutExpo(progress);
+        
+        if (isDecimal) {
+            element.textContent = current.toFixed(1);
+        } else {
+            element.textContent = Math.floor(current);
+        }
+        
+        if (progress < 1) {
+            requestAnimationFrame(updateCount);
+        }
+    }
+    
+    requestAnimationFrame(updateCount);
+}
+
+function easeOutExpo(t) {
+    return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+}
+
+// Dynamic greeting based on time
+function setGreeting() {
+    const now = new Date();
+    const hour = now.getHours();
+    const greetingEl = document.getElementById('greeting');
+    if (!greetingEl) return;
+    
+    const userFullName = greetingEl.dataset.user || "Guest";
+    
+    let greeting;
+    if (hour < 12) {
+        greeting = `Good Morning, ${userFullName}! Welcome to DataHub 🌅`;
+    } else if (hour < 17) {
+        greeting = `Good Afternoon, ${userFullName}! Welcome to DataHub ☀️`;
+    } else {
+        greeting = `Good Evening, ${userFullName}! Welcome to DataHub 🌙`;
+    }
+
+    greetingEl.textContent = greeting;
+}
+
+// Update stock status dynamically
+function updateStockStatus(network, status) {
+    const card = document.querySelector(`.network-card[data-network="${network.toLowerCase()}"]`);
+    if (!card) return;
+
+    const statusBadge = card.querySelector('.stock-status');
+    const buyBtn = card.querySelector('.buy-btn');
+
+    card.classList.remove('out-of-stock', 'limited-stock');
+    statusBadge.classList.remove('stock-in', 'stock-out', 'stock-limited');
+
+    switch(status) {
+        case 'out-of-stock':
+            card.classList.add('out-of-stock');
+            statusBadge.classList.add('stock-out');
+            statusBadge.textContent = 'OUT OF STOCK';
+            buyBtn.disabled = true;
+            buyBtn.textContent = 'Currently Unavailable';
+            break;
+        case 'limited':
+            card.classList.add('limited-stock');
+            statusBadge.classList.add('stock-limited');
+            statusBadge.textContent = 'LIMITED';
+            buyBtn.disabled = false;
+            buyBtn.textContent = 'Buy Data Bundle';
+            break;
+        default:
+            statusBadge.classList.add('stock-in');
+            statusBadge.textContent = 'IN STOCK';
+            buyBtn.disabled = false;
+            buyBtn.textContent = 'Buy Data Bundle';
+    }
+}
+
+// Tab navigation with enhanced animations
+function initNavigation() {
+    document.querySelectorAll('[data-nav]').forEach(navItem => {
+        navItem.addEventListener('click', function(e) {
+            e.preventDefault();
+            const tabId = this.dataset.nav;
+            switchToTab(tabId);
+            
+            document.querySelectorAll('[data-nav]').forEach(item => item.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+}
+
+// Switch to tab function
+function switchToTab(tab) {
+    document.querySelectorAll('.content-section').forEach(section => {
+        section.style.opacity = '0';
+        section.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            section.classList.remove('active');
+        }, 200);
+    });
+    
+    if (tab !== 'dashboard') {
+        document.body.classList.add('hidden-notices');
+    } else {
+        document.body.classList.remove('hidden-notices');
+    }
+    
+    const targetSection = document.getElementById(tab);
+    if (targetSection) {
+        setTimeout(() => {
+            targetSection.classList.add('active');
+            targetSection.style.opacity = '1';
+            targetSection.style.transform = 'translateY(0)';
+        }, 300);
+    }
+}
+
+// Open modal for purchasing data
+function openModal(network) {
+    const card = document.querySelector(`.network-card[data-network="${network.toLowerCase()}"]`);
+    if (card && card.classList.contains('out-of-stock')) {
+        showMessage('This network is currently out of stock. Please try another network.', 'error');
+        return;
+    }
+    if (!purchaseModal) return;
+
+    selectedNetwork = network;
+    document.getElementById('modalTitle').textContent = `Purchase ${network} Data Bundle`;
+    
+    document.querySelectorAll('.plans-group').forEach(group => {
+        if (group.dataset.telco === network) {
+            group.style.display = 'block';
+        } else {
+            group.style.display = 'none';
+        }
+    });
+
+    document.querySelectorAll('.plan-item').forEach(p => p.classList.remove('selected'));
+    
+    document.querySelectorAll(`.plans-group[data-telco="${network}"] .plan-item`).forEach(planElement => {
+        planElement.addEventListener('click', function() {
+            document.querySelectorAll(`.plans-group[data-telco="${network}"] .plan-item`).forEach(p => p.classList.remove('selected'));
+            this.classList.add('selected');
+
+            selectedPlan = {
+                id: this.dataset.id,
+                size: this.querySelector('.plan-size').textContent,
+                price: this.querySelector('.plan-price').textContent,
+                validity: this.querySelector('.plan-validity').textContent.replace('Valid for ', '')
+            };
+            
+            updateSelectedPlan();
+            checkFormValidity();
+            
+            this.style.transform = 'scale(1.05)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 200);
+        });
+    });
+    
+    purchaseModal.style.display = 'block';
+    document.getElementById('phoneInput').value = '';
+    document.getElementById('phoneError').style.display = 'none';
+    selectedPlan = null;
+    updateSelectedPlan();
+    checkFormValidity();
+}
+
+// Close modal with animation
+function closeModal() {
+    if (!purchaseModal) return;
+    const modalContent = purchaseModal.querySelector('.modal-content');
+    
+    modalContent.style.transform = 'translate(-50%, -50%) scale(0.8)';
+    modalContent.style.opacity = '0';
+    purchaseModal.style.opacity = '0';
+    
+    setTimeout(() => {
+        purchaseModal.style.display = 'none';
+        modalContent.style.transform = 'translate(-50%, -50%) scale(1)';
+        modalContent.style.opacity = '1';
+        purchaseModal.style.opacity = '1';
+    }, 300);
+}
+
+// Update selected plan display
+function updateSelectedPlan() {
+    const selectedPlanDiv = document.getElementById('selectedPlan');
+    const selectedPlanDetails = document.getElementById('selectedPlanDetails');
+    if (!selectedPlanDiv) return;
+    
+    if (selectedPlan) {
+        selectedPlanDiv.style.display = 'block';
+        selectedPlanDiv.style.animation = 'fadeInScale 0.5s ease-out';
+        selectedPlanDetails.innerHTML = `
+            <strong style="color: #2c3e50; font-size: 1.1rem;">${selectedPlan.size}</strong> - <span style="color: #4CAF50; font-weight: bold;">${selectedPlan.price}</span><br>
+            <small style="color: #6c757d;">${selectedPlan.validity}</small>
+        `;
+    } else {
+        selectedPlanDiv.style.display = 'none';
+    }
+}
+
+// Enhanced message system
+function showMessage(text, type = 'info') {
+    const existingMessage = document.querySelector('.message');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+
+    const message = document.createElement('div');
+    message.className = `message ${type}`;
+    message.textContent = text;
+    
+    const header = document.querySelector('.header');
+    if (header) {
+        header.parentNode.insertBefore(message, header.nextSibling);
+    } else {
+        document.body.prepend(message);
+    }
+    
+    setTimeout(() => {
+        message.style.opacity = '0';
+        message.style.transform = 'translateY(-20px)';
+        setTimeout(() => message.remove(), 300);
+    }, 5000);
+}
+
+// Validate phone number
+function validatePhone(phone) {
+    const phoneRegex = /^0\d{9}$/;
+    return phoneRegex.test(phone);
+}
+
+// Check form validity
+function checkFormValidity() {
+    const phoneInput = document.getElementById('phoneInput');
+    const purchaseBtn = document.getElementById('purchaseBtn');
+    const phoneError = document.getElementById('phoneError');
+    if (!phoneInput || !purchaseBtn) return;
+    
+    const phone = phoneInput.value;
+    const isPhoneValid = validatePhone(phone);
+    const isPlanSelected = selectedPlan !== null;
+    
+    if (phone.length > 0) {
+        if (!phone.startsWith('0')) {
+            phoneError.textContent = 'Phone number must start with 0';
+            phoneError.style.display = 'block';
+            phoneInput.classList.add('error');
+        } else if (phone.length !== 10) {
+            phoneError.textContent = 'Phone number must be exactly 10 digits';
+            phoneError.style.display = 'block';
+            phoneInput.classList.add('error');
+        } else if (!isPhoneValid) {
+            phoneError.textContent = 'Please enter a valid phone number';
+            phoneError.style.display = 'block';
+            phoneInput.classList.add('error');
+        } else {
+            phoneError.style.display = 'none';
+            phoneInput.classList.remove('error');
+            phoneInput.style.borderColor = '#4CAF50';
+            setTimeout(() => {
+                phoneInput.style.borderColor = '';
+            }, 1000);
+        }
+    } else {
+        phoneError.style.display = 'none';
+        phoneInput.classList.remove('error');
+    }
+    
+    const wasDisabled = purchaseBtn.disabled;
+    purchaseBtn.disabled = !(isPhoneValid && isPlanSelected);
+    
+    if (wasDisabled && !purchaseBtn.disabled) {
+        purchaseBtn.style.transform = 'scale(1.05)';
+        setTimeout(() => {
+            purchaseBtn.style.transform = '';
+        }, 200);
+    }
+}
+
+// Phone input validation
+function initPhoneValidation() {
+    const phoneInput = document.getElementById('phoneInput');
+    if (!phoneInput) return;
+    
+    phoneInput.addEventListener('input', function() {
+        this.value = this.value.replace(/\D/g, '');
+        
+        if (this.value.length > 0 && !this.value.startsWith('0')) {
+            this.value = '0' + this.value.slice(0, 9);
+        }
+        
+        if (this.value.length > 10) {
+            this.value = this.value.slice(0, 10);
+        }
+        
+        checkFormValidity();
+    });
+
+    phoneInput.addEventListener('focus', function() {
+        this.style.transform = 'scale(1.02)';
+    });
+
+    phoneInput.addEventListener('blur', function() {
+        this.style.transform = '';
+    });
+}
+
+// Process purchase
+function processPurchase(event) {
+    event.preventDefault(); // Prevent the default form submission
+    
+    const phoneNumber = document.getElementById('phoneInput').value;
+    const purchaseBtn = document.getElementById('purchaseBtn');
+    
+    if (!selectedPlan || !validatePhone(phoneNumber)) {
+        showMessage('Please select a plan and enter a valid phone number.', 'error');
+        return;
+    }
+    
+    purchaseBtn.innerHTML = 'Processing... <span class="loading"></span>';
+    purchaseBtn.disabled = true;
+    
+    const formData = new FormData();
+    formData.append('bundle_id', selectedPlan.id);
+    formData.append('phone_number', phoneNumber);
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch('{% url "payment_initiate" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: formData,
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => { throw new Error(err.message || 'Server error'); });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            window.location.href = data.authorization_url;
+        } else {
+            showMessage(data.message || 'An error occurred. Please try again.', 'error');
+            closeModal();
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        showMessage('Network error. Please check your connection.', 'error');
+        closeModal();
+    });
+}
+
+function handlePaymentStatus() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment_status');
+    const orderId = urlParams.get('order_id');
+    const errorMessage = urlParams.get('message');
+    
+    if (paymentStatus === 'success') {
+        showMessage(`Payment successful! Order ${orderId} is being processed.`, 'success');
+    } else if (paymentStatus === 'failed') {
+        showMessage('Payment failed. Please try again or use another payment method.', 'error');
+    } else if (paymentStatus === 'error') {
+        showMessage(`An error occurred during payment: ${errorMessage}`, 'error');
+    }
+
+    if (paymentStatus) {
+        history.replaceState(null, '', window.location.pathname);
+    }
+}
+
+// Modal click handler
+function initModalClickHandler() {
+    window.addEventListener('click', function(event) {
+        if (event.target === purchaseModal) {
+            closeModal();
+        }
+    });
+}
+
+// Real-time updates simulation
+function startRealTimeUpdates() {
+    setInterval(() => {
+        const statNumbers = document.querySelectorAll('.stat-number');
+        statNumbers.forEach((stat) => {
+            if (stat.dataset.target) {
+                return;
+            }
+            if (stat.textContent && !isNaN(parseInt(stat.textContent)) && Math.random() > 0.97) {
+                const currentValue = parseInt(stat.textContent);
+                const newValue = currentValue + Math.floor(Math.random() * 3) + 1;
+                
+                stat.style.transform = 'scale(1.2)';
+                stat.style.color = '#4CAF50';
+                
+                setTimeout(() => {
+                    stat.textContent = newValue;
+                    setTimeout(() => {
+                        stat.style.transform = '';
+                        stat.style.color = '';
+                    }, 200);
+                }, 100);
+            }
+        });
+
+        if (Math.random() > 0.995) {
+            const networks = ['MTN', 'AirtelTigo', 'Telecel'];
+            const statuses = ['in-stock', 'limited', 'out-of-stock'];
+            const randomNetwork = networks[Math.floor(Math.random() * networks.length)];
+            const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+            
+            stockStatuses[randomNetwork] = randomStatus;
+            updateStockStatus(randomNetwork, randomStatus);
+        }
+    }, 2000);
+}
+
+// Initialize counting animations
+function initCountAnimations() {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const target = entry.target;
+                const finalValue = parseFloat(target.dataset.target);
+                if (!isNaN(finalValue)) {
+                    animateCountUp(target, finalValue);
+                    observer.unobserve(target);
+                }
+            }
+        });
+    }, { threshold: 0.5 });
+
+    document.querySelectorAll('[data-target]').forEach(el => {
+        observer.observe(el);
+    });
+}
+
+// Logout function
+function logoutUser() {
+    if (confirm('Are you sure you want to logout?')) {
+        const form = document.createElement('form');
+        form.method = 'post';
+        form.action = '{% url "signout" %}';
+        
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        if (csrfToken) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = csrfToken;
+            form.appendChild(csrfInput);
+        }
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Enhanced CSS transition styles
+function addTransitionStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .content-section {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .phone-input, .purchase-btn, .buy-btn {
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .plans-group {
+            display: none;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// Initialize everything
+document.addEventListener('DOMContentLoaded', function() {
+    createParticles();
+    addTransitionStyles();
+    setGreeting();
+    initNavigation();
+    initPhoneValidation();
+    initModalClickHandler();
+    initCountAnimations();
+    startRealTimeUpdates();
+    handlePaymentStatus(); // Moved here to be called on initial page load
+
+    document.querySelectorAll('.buy-btn').forEach(button => {
+        const card = button.closest('.network-card');
+        const networkName = card.querySelector('.network-name').textContent.trim();
+        button.addEventListener('click', () => openModal(networkName));
+    });
+    
+    // Attach the event listener for the payment form submission
+    if (purchaseForm) {
+        purchaseForm.addEventListener('submit', processPurchase);
+    }
+    
+    document.body.style.opacity = '0';
+    setTimeout(() => {
+        document.body.style.transition = 'opacity 0.5s ease';
+        document.body.style.opacity = '1';
+    }, 100);
+});
+
+// Keyboard navigation
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        if (purchaseModal.style.display === 'block') {
+            closeModal();
+        }
+    }
+});
+
+// Performance optimization
+document.addEventListener('visibilitychange', function() {
+    const particles = document.querySelectorAll('.particle');
+    particles.forEach(particle => {
+        if (document.hidden) {
+            particle.style.animationPlayState = 'paused';
+        } else {
+            particle.style.animationPlayState = 'running';
+        }
+    });
+});
     </script>
     <script src="{% static 'js/testhome.js' %}"></script>
     {% include 'components/messages.html' %}

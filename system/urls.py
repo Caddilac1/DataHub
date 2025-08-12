@@ -11,4 +11,5 @@ urlpatterns = [
    path('tests/', TestHomeView.as_view(), name='test_home'),
    path('payment/', PaymentView.as_view(), name='payment_initiate'),
    path('payment/callback/', PaymentView.as_view(), name='payment_callback'),
+   
 ]

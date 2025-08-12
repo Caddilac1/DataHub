@@ -164,7 +164,7 @@ class CustomLoginView(View):
             'otp_form': otp_form,
             'show_otp_form': show_otp_form
         }
-        return render(request, 'authentication/registration/login.html', context)
+        return render(request, 'authentication/registration/login2.html', context)
 
     def post(self, request):
         # Handle email submission (initial or resend)

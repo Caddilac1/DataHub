@@ -52,7 +52,7 @@ class EmailForm(forms.Form):
     email = forms.EmailField(
         label="Email Address",
         max_length=254,
-        widget=forms.EmailInput(attrs={'placeholder': 'Enter your email address', 'class': 'form-input'})
+        widget=forms.EmailInput(attrs={'placeholder': 'Enter your email address', 'class': 'form-input','id': 'id_password'})
     )
 
     def clean_email(self):
@@ -65,7 +65,7 @@ class OTPForm(forms.Form):
     otp = forms.CharField(
         label="OTP",
         max_length=6,
-        widget=forms.TextInput(attrs={'placeholder': 'Enter 6-digit OTP', 'class': 'form-input'})
+        widget=forms.TextInput(attrs={'placeholder': 'Enter 6-digit OTP', 'class': 'form-input', 'id': 'id_password'}),
     )
 
 class SocialSignupForm(forms.ModelForm):

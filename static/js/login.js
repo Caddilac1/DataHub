@@ -20,9 +20,9 @@
             return emailRegex.test(email);
         }
 
-        function validatePassword(password) {
+        /*function validatePassword(password) {
             return password.length >= 6; 
-        }
+        }*/
 
         function showError(fieldId, message) {
             const field = document.getElementById(`id_${fieldId}`);
@@ -68,7 +68,7 @@
         }
 
         // Password visibility toggle
-        function initPasswordToggle() {
+        /*function initPasswordToggle() {
             const passwordInput = document.getElementById('id_password');
             const passwordToggle = document.getElementById('passwordToggle');
 
@@ -77,7 +77,7 @@
                 passwordInput.type = isPassword ? 'text' : 'password';
                 this.textContent = isPassword ? '🙈' : '👁️';
             });
-        }
+        }*/
 
         
        function initFormSubmission() {
@@ -106,7 +106,7 @@
         }
 
         // Password validation
-        const password = formData.get('password');
+        /*const password = formData.get('password');
         if (!password || password.trim() === '') {
             showError('password', 'Please enter your password');
             isValid = false;
@@ -117,12 +117,12 @@
         if (!isValid) {
             showMessage('Please fix the errors above and try again.', 'error');
             return; // Stop here if validation fails
-        }
+        }*/
 
         // Show loading state
         submitBtn.disabled = true;
         loading.style.display = 'inline-block';
-        submitBtn.textContent = 'Signing In...';
+        submitBtn.textContent = 'Sending OTP...';
 
     
         this.submit();

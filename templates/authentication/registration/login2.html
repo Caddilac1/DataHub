@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+{% load static %}
+{% load socialaccount %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <title>Login - DataHub</title>
+    
+</head>
+<body>
+    <!-- Floating Particles -->
+    <div id="particles"></div>
+
+    <div class="login-container">
+        <!-- Header -->
+        <div class="auth-header">
+            <h1>DataHub</h1>
+            <p>Welcome back! Please sign in to your account</p>
+        </div>
+
+        <!-- Success/Error Messages -->
+        <div id="messages">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="message {{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <!-- Login Form -->
+         {% if show_otp_form %}
+        <form class="auth-form" id="loginForm" method="post">
+         
+            {% csrf_token %}
+            <p>An OTP has been sent to your email.</p>
+                {% for field in otp_form %}
+            
+            <!-- Email -->
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% for error in field.errors %}
+                            <div class="error-message" id="email_error">{{ error }}</div>
+                        {% endfor %}
+            </div>
+             {% endfor %}
+             
+
+            <!-- Password -->
+            <!--<div class="form-group">
+                <label for="id_password">Password</label>
+                <div class="password-input">
+                    <input type="password" 
+                           class="form-input" 
+                           id="id_password" 
+                           name="password" 
+                           placeholder="Enter your password" 
+                           required>
+                    <button type="button" class="password-toggle" id="passwordToggle">
+                        👁️
+                    </button>
+                </div>
+                <div class="error-message" id="password_error"></div>
+            </div>-->
+
+            <!-- Form Options -->
+            <!--<div class="form-options">
+                <label class="remember-me">
+                    <input type="checkbox" id="id_remember" name="remember">
+                    Remember me
+                </label>
+                <a href="/forgot-password/" class="forgot-password">Forgot Password?</a>
+            </div>-->
+
+            <!-- Submit Button -->
+            <button type="submit" name="verify_otp" class="submit-btn" id="submitBtn">
+                Verify OTP & Log In
+                <div class="loading" id="loading"></div>
+            </button>
+        </form>
+
+
+        <form method="post" class="resend-otp-form">
+                {% csrf_token %}
+                <input type="hidden" name="email" value="{{ request.session.otp_sent_to_email }}">
+                <button type="submit" name="request_otp" class="resend-otp-btn">Resend OTP</button>
+            </form>
+
+            {% else %}
+            <form method="post" class="auth-form">
+                {% csrf_token %}
+                {% for field in email_form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}
+                            <div class="error-message">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+                <button type="submit" name="request_otp" class="submit-btn">Request OTP</button>
+            </form>
+        {% endif %}
+
+
+        <!-- Social Login -->
+        <div class="social-login">
+            <div class="social-divider">
+                <span>Or continue with</span>
+            </div>
+            
+            <!-- Google Sign In Button -->
+            <button onclick="window.location.href = '{% provider_login_url 'google' %}' " type="button" class="login-with-google-btn" id="googleSignIn">
+                <div class="google-icon"></div>
+                Continue with Google
+            </button>
+        </div>
+
+        <!-- Register Link -->
+        <div class="auth-switch">
+            <p>Don't have an account?</p>
+            <a href="/register/" id="registerLink">Create Account</a>
+        </div>
+    </div>
+
+    <script src="{% static 'js/login.js' %}"></script>
+
+    <!-- Django Integration Instructions (Remove in production) -->
+    <div style="display: none;">
+      
+    </div>
+    {% include 'components/messages.html' %}
+</body>
+</html>

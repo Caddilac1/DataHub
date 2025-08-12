@@ -246,7 +246,7 @@ class CustomLoginView(View):
 
                     # Check if OTP is valid and not expired
                     if latest_otp and latest_otp.verify_code(otp_code):
-                        auth.login(request, user)
+                        auth.login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                         AuditLog.objects.create(
                             user=user,
                             action='login_successful',

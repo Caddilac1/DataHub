@@ -237,3 +237,6 @@ DEFAULT_FROM_EMAIL = 'DataHub <datahubone@gmail.com>'
 # EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 # EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 #relax
+
+TEST_SECRET_KEY = env("TEST_SECRET_KEY")
+TEST_PUBLIC_KEY = env("TEST_PUBLIC_KEY")    

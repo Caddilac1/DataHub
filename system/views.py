@@ -167,7 +167,7 @@ class PaymentView(LoginRequiredMixin, View):
                 bundle = get_object_or_404(Bundle, pk=bundle_id)
                 user = request.user
                 
-                # Create the order first
+                # Create the order first 
                 order = DataBundleOrder.objects.create(
                     user=user,
                     telco=bundle.telco,

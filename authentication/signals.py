@@ -15,8 +15,10 @@ from .models import (
     Telco
 )
 
-# Thread-local storage for request context
+# Thread-local storage for request context and model instance cache
 _thread_locals = local()
+_original_instances = local()
+_original_instances.cache = {}
 
 # Logger for signal errors
 logger = logging.getLogger(__name__)
@@ -52,8 +54,13 @@ def create_audit_log(action, user=None, details=None, ip_address=None, user_agen
     try:
         context = get_request_context()
         
+        # Ensure the user is a valid User object or None
+        log_user = user or context.get('current_user')
+        if log_user and not isinstance(log_user, User):
+            log_user = None
+
         AuditLog.objects.create(
-            user=user or context.get('current_user'),
+            user=log_user,
             action=action,
             details=details or {},
             ip_address=ip_address or context.get('ip_address'),
@@ -73,7 +80,7 @@ def get_model_changes(instance, original_instance=None):
         old_value = getattr(original_instance, field_name, None)
         new_value = getattr(instance, field_name, None)
         
-        # Skip certain sensitive fields
+        # Skip sensitive fields
         if field_name in ['password', 'hashed_code']:
             continue
             
@@ -86,10 +93,30 @@ def get_model_changes(instance, original_instance=None):
     return changes
 
 
-# ---------- User-Related Signals ----------
+# ---------- Pre-Save Handlers to Cache Original Instances ----------
+@receiver(pre_save, sender=User)
+@receiver(pre_save, sender=Bundle)
+@receiver(pre_save, sender=Telco)
+@receiver(pre_save, sender=DataBundleOrder)
+@receiver(pre_save, sender=Payment)
+def cache_original_instance(sender, instance, **kwargs):
+    """Caches the original instance before a save operation for change tracking."""
+    if not hasattr(_original_instances, 'cache'):
+        _original_instances.cache = {}
+        
+    if instance.pk:
+        try:
+            _original_instances.cache[instance.pk] = sender.objects.get(pk=instance.pk)
+        except sender.DoesNotExist:
+            _original_instances.cache[instance.pk] = None
+
+
+# ---------- Post-Save Handlers (Updated for Caching) ----------
 @receiver(post_save, sender=User)
 def user_post_save_handler(sender, instance, created, **kwargs):
     """Handle user creation and updates."""
+    original = _original_instances.cache.pop(instance.pk, None)
+    
     if created:
         create_audit_log(
             action='user_created',
@@ -102,66 +129,46 @@ def user_post_save_handler(sender, instance, created, **kwargs):
                 'account_status': instance.account_status
             }
         )
-    else:
-        # Get the original instance to track changes
-        try:
-            original = User.objects.get(pk=instance.pk)
-            changes = get_model_changes(instance, original)
-            
-            if changes:
-                # Special handling for specific field changes
-                if 'email_verified' in changes and changes['email_verified']['new'] == 'True':
-                    create_audit_log(
-                        action='email_verified',
-                        user=instance,
-                        details={
-                            'email': instance.email,
-                            'verified_at': str(timezone.now())
-                        }
-                    )
-                
-                if 'account_status' in changes:
-                    create_audit_log(
-                        action='account_status_changed',
-                        user=instance,
-                        details={
-                            'old_status': changes['account_status']['old'],
-                            'new_status': changes['account_status']['new'],
-                            'email': instance.email
-                        }
-                    )
-                
-                if 'account_locked_until' in changes and changes['account_locked_until']['new']:
-                    create_audit_log(
-                        action='account_locked',
-                        user=instance,
-                        details={
-                            'locked_until': changes['account_locked_until']['new'],
-                            'failed_attempts': instance.failed_login_attempts,
-                            'email': instance.email
-                        }
-                    )
-                elif 'account_locked_until' in changes and not changes['account_locked_until']['new']:
-                    create_audit_log(
-                        action='account_unlocked',
-                        user=instance,
-                        details={
-                            'email': instance.email,
-                            'unlocked_at': str(timezone.now())
-                        }
-                    )
-                
-                # General user update log
+    elif original:
+        changes = get_model_changes(instance, original)
+        if changes:
+            if 'email_verified' in changes and changes['email_verified']['new'] == 'True':
                 create_audit_log(
-                    action='user_updated',
+                    action='email_verified',
+                    user=instance,
+                    details={'email': instance.email, 'verified_at': str(timezone.now())}
+                )
+            
+            if 'account_status' in changes:
+                create_audit_log(
+                    action='account_status_changed',
                     user=instance,
                     details={
-                        'changes': changes,
+                        'old_status': changes['account_status']['old'],
+                        'new_status': changes['account_status']['new'],
                         'email': instance.email
                     }
                 )
-        except User.DoesNotExist:
-            pass  # Original instance doesn't exist, skip change tracking
+            
+            if 'account_locked_until' in changes:
+                if changes['account_locked_until']['new']:
+                    create_audit_log(
+                        action='account_locked',
+                        user=instance,
+                        details={'locked_until': changes['account_locked_until']['new'], 'email': instance.email}
+                    )
+                else:
+                    create_audit_log(
+                        action='account_unlocked',
+                        user=instance,
+                        details={'email': instance.email, 'unlocked_at': str(timezone.now())}
+                    )
+            
+            create_audit_log(
+                action='user_updated',
+                user=instance,
+                details={'changes': changes, 'email': instance.email}
+            )
 
 
 @receiver(user_logged_in)
@@ -170,18 +177,13 @@ def user_logged_in_handler(sender, request, user, **kwargs):
     ip_address = get_client_ip(request)
     user_agent = request.META.get('HTTP_USER_AGENT', '')
     
-    # Reset failed login attempts on successful login
     if user.failed_login_attempts > 0:
         user.reset_failed_login_attempts()
     
     create_audit_log(
         action='user_login',
         user=user,
-        details={
-            'email': user.email,
-            'login_time': str(timezone.now()),
-            'session_key': request.session.session_key
-        },
+        details={'email': user.email, 'login_time': str(timezone.now()), 'session_key': request.session.session_key},
         ip_address=ip_address,
         user_agent=user_agent
     )
@@ -190,17 +192,14 @@ def user_logged_in_handler(sender, request, user, **kwargs):
 @receiver(user_logged_out)
 def user_logged_out_handler(sender, request, user, **kwargs):
     """Handle user logout."""
-    if user:  # User might be None for anonymous sessions
+    if user:
         ip_address = get_client_ip(request)
         user_agent = request.META.get('HTTP_USER_AGENT', '')
         
         create_audit_log(
             action='user_logout',
             user=user,
-            details={
-                'email': user.email,
-                'logout_time': str(timezone.now())
-            },
+            details={'email': user.email, 'logout_time': str(timezone.now())},
             ip_address=ip_address,
             user_agent=user_agent
         )
@@ -212,7 +211,6 @@ def user_login_failed_handler(sender, credentials, request, **kwargs):
     ip_address = get_client_ip(request)
     user_agent = request.META.get('HTTP_USER_AGENT', '')
     
-    # Try to find the user by email
     user = None
     email = credentials.get('email') or credentials.get('username')
     if email:
@@ -253,7 +251,6 @@ def otp_post_save_handler(sender, instance, created, **kwargs):
             user_agent=instance.user_agent
         )
     else:
-        # Track OTP verification
         if instance.status == 'used':
             create_audit_log(
                 action='otp_verified',
@@ -287,6 +284,8 @@ def otp_post_save_handler(sender, instance, created, **kwargs):
 @receiver(post_save, sender=DataBundleOrder)
 def order_post_save_handler(sender, instance, created, **kwargs):
     """Handle order creation and updates."""
+    original = _original_instances.cache.pop(instance.pk, None)
+
     if created:
         create_audit_log(
             action='order_created',
@@ -301,30 +300,26 @@ def order_post_save_handler(sender, instance, created, **kwargs):
             ip_address=instance.ip_address,
             user_agent=instance.user_agent
         )
-    else:
-        # Track status changes
-        try:
-            original = DataBundleOrder.objects.get(pk=instance.pk)
-            if original.status != instance.status:
-                create_audit_log(
-                    action='order_status_changed',
-                    user=instance.user,
-                    details={
-                        'order_id': instance.id,
-                        'old_status': original.status,
-                        'new_status': instance.status,
-                        'phone_number': instance.phone_number,
-                        'provider_order_id': instance.provider_order_id
-                    }
-                )
-        except DataBundleOrder.DoesNotExist:
-            pass
+    elif original and original.status != instance.status:
+        create_audit_log(
+            action='order_status_changed',
+            user=instance.user,
+            details={
+                'order_id': instance.id,
+                'old_status': original.status,
+                'new_status': instance.status,
+                'phone_number': instance.phone_number,
+                'provider_order_id': instance.provider_order_id
+            }
+        )
 
 
 # ---------- Payment-Related Signals ----------
 @receiver(post_save, sender=Payment)
 def payment_post_save_handler(sender, instance, created, **kwargs):
     """Handle payment creation and updates."""
+    original = _original_instances.cache.pop(instance.pk, None)
+
     if created:
         create_audit_log(
             action='payment_initiated',
@@ -339,43 +334,39 @@ def payment_post_save_handler(sender, instance, created, **kwargs):
             ip_address=instance.ip_address,
             user_agent=instance.user_agent
         )
-    else:
-        # Track payment status changes
-        try:
-            original = Payment.objects.get(pk=instance.pk)
-            if original.status != instance.status:
-                action_map = {
-                    'success': 'payment_completed',
-                    'failed': 'payment_failed',
-                    'refunded': 'payment_refunded',
-                    'cancelled': 'payment_cancelled'
-                }
-                
-                action = action_map.get(instance.status, 'payment_status_changed')
-                
-                create_audit_log(
-                    action=action,
-                    user=instance.order.user,
-                    details={
-                        'payment_id': instance.id,
-                        'order_id': instance.order.id,
-                        'amount': str(instance.amount),
-                        'reference': instance.reference,
-                        'old_status': original.status,
-                        'new_status': instance.status,
-                        'paid_at': str(instance.paid_at) if instance.paid_at else None
-                    }
-                )
-        except Payment.DoesNotExist:
-            pass
+    elif original and original.status != instance.status:
+        action_map = {
+            'success': 'payment_completed',
+            'failed': 'payment_failed',
+            'refunded': 'payment_refunded',
+            'cancelled': 'payment_cancelled'
+        }
+        
+        action = action_map.get(instance.status, 'payment_status_changed')
+        
+        create_audit_log(
+            action=action,
+            user=instance.order.user,
+            details={
+                'payment_id': instance.id,
+                'order_id': instance.order.id,
+                'amount': str(instance.amount),
+                'reference': instance.reference,
+                'old_status': original.status,
+                'new_status': instance.status,
+                'paid_at': str(instance.paid_at) if instance.paid_at else None
+            }
+        )
 
 
 # ---------- Bundle & Telco Signals ----------
 @receiver(post_save, sender=Bundle)
 def bundle_post_save_handler(sender, instance, created, **kwargs):
     """Handle bundle creation and updates."""
+    context = get_request_context()
+    original = _original_instances.cache.pop(instance.pk, None)
+    
     if created:
-        context = get_request_context()
         create_audit_log(
             action='bundle_created',
             user=context.get('current_user'),
@@ -387,46 +378,42 @@ def bundle_post_save_handler(sender, instance, created, **kwargs):
                 'price': str(instance.price)
             }
         )
-    else:
-        # Track important changes like price updates or stock status
-        try:
-            original = Bundle.objects.get(pk=instance.pk)
-            changes = get_model_changes(instance, original)
-            
-            if 'price' in changes:
-                context = get_request_context()
-                create_audit_log(
-                    action='bundle_price_changed',
-                    user=context.get('current_user'),
-                    details={
-                        'bundle_id': instance.id,
-                        'telco': instance.telco.name,
-                        'bundle_name': instance.name,
-                        'old_price': changes['price']['old'],
-                        'new_price': changes['price']['new']
-                    }
-                )
-            
-            if 'is_active' in changes and changes['is_active']['new'] == 'False':
-                context = get_request_context()
-                create_audit_log(
-                    action='bundle_deactivated',
-                    user=context.get('current_user'),
-                    details={
-                        'bundle_id': instance.id,
-                        'telco': instance.telco.name,
-                        'bundle_name': instance.name
-                    }
-                )
-        except Bundle.DoesNotExist:
-            pass
+    elif original:
+        changes = get_model_changes(instance, original)
+        
+        if 'price' in changes:
+            create_audit_log(
+                action='bundle_price_changed',
+                user=context.get('current_user'),
+                details={
+                    'bundle_id': instance.id,
+                    'telco': instance.telco.name,
+                    'bundle_name': instance.name,
+                    'old_price': changes['price']['old'],
+                    'new_price': changes['price']['new']
+                }
+            )
+        
+        if 'is_active' in changes:
+            action = 'bundle_activated' if instance.is_active else 'bundle_deactivated'
+            create_audit_log(
+                action=action,
+                user=context.get('current_user'),
+                details={
+                    'bundle_id': instance.id,
+                    'telco': instance.telco.name,
+                    'bundle_name': instance.name
+                }
+            )
 
 
 @receiver(post_save, sender=Telco)
 def telco_post_save_handler(sender, instance, created, **kwargs):
     """Handle telco creation and updates."""
+    context = get_request_context()
+    original = _original_instances.cache.pop(instance.pk, None)
+    
     if created:
-        context = get_request_context()
         create_audit_log(
             action='telco_created',
             user=context.get('current_user'),
@@ -436,23 +423,17 @@ def telco_post_save_handler(sender, instance, created, **kwargs):
                 'code': instance.code
             }
         )
-    else:
-        try:
-            original = Telco.objects.get(pk=instance.pk)
-            if original.is_active != instance.is_active:
-                context = get_request_context()
-                action = 'telco_activated' if instance.is_active else 'telco_deactivated'
-                create_audit_log(
-                    action=action,
-                    user=context.get('current_user'),
-                    details={
-                        'telco_id': instance.id,
-                        'name': instance.name,
-                        'code': instance.code
-                    }
-                )
-        except Telco.DoesNotExist:
-            pass
+    elif original and original.is_active != instance.is_active:
+        action = 'telco_activated' if instance.is_active else 'telco_deactivated'
+        create_audit_log(
+            action=action,
+            user=context.get('current_user'),
+            details={
+                'telco_id': instance.id,
+                'name': instance.name,
+                'code': instance.code
+            }
+        )
 
 
 # ---------- Utility Functions ----------
@@ -470,11 +451,6 @@ def get_client_ip(request):
 def log_custom_action(action, user=None, details=None, request=None):
     """
     Manually log custom actions not covered by automatic signals.
-    
-    Usage:
-        from .signals import log_custom_action
-        log_custom_action('custom_action', user=request.user, 
-                         details={'key': 'value'}, request=request)
     """
     ip_address = None
     user_agent = None
@@ -500,11 +476,9 @@ def audit_log_cleanup_handler(sender, instance, created, **kwargs):
     You might want to run this as a periodic task instead.
     """
     if created:
-        # Only run cleanup occasionally (e.g., 1% chance)
         import random
         if random.randint(1, 100) == 1:
             try:
-                # Clean up audit logs older than 1 year
                 cutoff_date = timezone.now() - timezone.timedelta(days=365)
                 old_logs_count = AuditLog.objects.filter(created_at__lt=cutoff_date).count()
                 if old_logs_count > 0:

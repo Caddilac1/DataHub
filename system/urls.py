@@ -8,4 +8,5 @@ from .views import *
 
 urlpatterns = [
    path('', HomeView.as_view(), name='home'),
+   path('tests/', TestHomeView.as_view(), name='test_home'),
 ]

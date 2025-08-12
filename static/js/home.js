@@ -515,8 +515,8 @@ function initProfileData() {
 function logoutUser() {
     if (confirm('Are you sure you want to logout?')) {
         const form = document.createElement('form');
-        form.method = 'post';
-        form.action = '/logout/';
+        form.method = 'get';
+        form.action = '/signout/';
         
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
         if (csrfToken) {

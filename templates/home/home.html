@@ -10,6 +10,36 @@
 </head>
 <body>
     <div class="container">
+        <div class="navbar">
+    <div class="navbar-brand">
+        DataHub
+    </div>
+    
+    <div class="navbar-menu">
+        <a class="navbar-item active" data-nav="dashboard">Dashboard</a>
+        <a class="navbar-item" data-nav="orders">Recent Orders</a>
+        <a class="navbar-item" data-nav="history">Order History</a>
+        <a class="navbar-item" data-nav="profile">Profile</a>
+    </div>
+    
+    <!--<form method="get" action="{% url 'signout' %}" class="navbar-profile">
+        {% csrf_token %}-->
+        {% if user.profile_picture %}
+    <img src="{{ user.profile_picture.url }}" alt="Profile Picture">
+{% else %}
+    <div class="profile-avatar">
+        {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
+    </div>
+{% endif %}
+
+
+        {% if request.user.is_authenticated %}
+        <button class="logout-btn" onclick="logoutUser()">Logout</button>
+        {% else %}
+        <a class="login-btn" href="{% url 'login' %}">Login</a>
+        {% endif %}
+   <!-- </form>-->
+</div>
         <!-- Floating Particles -->
         <div id="particles"></div>
 
@@ -19,11 +49,6 @@
             <div class="greeting" id="greeting">Welcome to DataHub!</div>
             <p>Your Reliable Data Connection Partner in Ghana</p>
         </div>
-
-        <form action="{% url 'signout' %}" method="post">
-    {% csrf_token %}
-    <button type="submit">Logout</button>
-</form>
 
 
         <!-- Warning Notice -->
@@ -54,13 +79,6 @@
                 <li>For instant bundles, this service is not suitable.</li>
             </ul>
             <p style="margin-top: 10px;"><em>We value your business and are committed to delivering quality service. Thank you for your understanding and patience.</em></p>
-        </div>
-
-        <!-- Navigation -->
-        <div class="nav">
-            <button class="nav-btn active" data-tab="dashboard">Dashboard</button>
-            <button class="nav-btn" data-tab="orders">Recent Orders</button>
-            <button class="nav-btn" data-tab="history">Order History</button>
         </div>
 
         <!-- Dashboard Section -->
@@ -291,6 +309,34 @@
         </div>
     </div>
 
+    <div class="content-section" id="profile">
+    <div class="orders-section">
+        <h2>👤 Profile Information</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; position: relative; z-index: 1;">
+            <div style="background: linear-gradient(135deg, #f8f9fa, #e9ecef); padding: 25px; border-radius: 20px; border: 2px solid rgba(76, 175, 80, 0.2);">
+                <h3 style="color: #2c3e50; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                    📝 Account Details
+                </h3>
+                <p><strong>Full Name:</strong> <span id="userFullName">John Doe</span></p>
+                <p><strong>Username:</strong> <span id="username">johndoe</span></p>
+                <p><strong>Email:</strong> <span id="userEmail">john@example.com</span></p>
+                <p><strong>Date Joined:</strong> <span id="dateJoined">Jan 15, 2024</span></p>
+            </div>
+            
+            <div style="background: linear-gradient(135deg, #e8f5e8, #d4edda); padding: 25px; border-radius: 20px; border: 2px solid rgba(76, 175, 80, 0.3);">
+                <h3 style="color: #2c3e50; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                    📊 Account Statistics
+                </h3>
+                <p><strong>Total Orders:</strong> <span style="color: #4CAF50; font-weight: bold;" id="totalOrders">47</span></p>
+                <p><strong>Successful Orders:</strong> <span style="color: #4CAF50; font-weight: bold;" id="successfulOrders">45</span></p>
+                <p><strong>Success Rate:</strong> <span style="color: #4CAF50; font-weight: bold;" id="successRate">95.7%</span></p>
+                <p><strong>Total Spent:</strong> <span style="color: #4CAF50; font-weight: bold;" id="totalSpent">GH₵ 342.50</span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
     <!-- Purchase Modal -->
     <div class="modal" id="purchaseModal">
         <div class="modal-content">
@@ -321,10 +367,18 @@
             </button>
         </div>
     </div>
+<script src="{% static 'js/home.js' %}"></script>
 
-
-    <script src="{% static 'js/home.js' %}"></script>
-    {% include 'components/messages.html' %}
+<script>
+    const dataPlans = {{ data_plans_json|safe }};
+    window.userFullName = "{{ request.user.full_name|escapejs }}";
+    updateStockStatus(
+    "{{ telco.code|escapejs }}",
+    "{{ telco.stock_status|escapejs }}"
+    );
+</script>
+    
+     {% include 'components/messages.html' %}
 
     
 </body>

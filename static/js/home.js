@@ -105,6 +105,7 @@ function updateStockStatus(network, status) {
     }
 }
 
+
 // Tab navigation with enhanced animations
 function initNavigation() {
     // Handle main navigation buttons

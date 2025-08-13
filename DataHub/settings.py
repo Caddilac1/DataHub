@@ -34,7 +34,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-SITE_ID = 1
+SITE_ID = 2
 
 
 # Application definition
@@ -176,10 +176,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 JAZZMIN_SETTINGS = {
     "site_title": "Welcome to Datahub Admin",
     #"site_logo": "static/image/badge.png",  # Path to your logo image
-    "site_header":  "Cadditech Solutions",
-    "site_brand": "Cadditech Solutions", 
+    "site_header":  "DataHub Admin",
+    "site_brand": "DataHub", 
     "welcome_sign": "Welcome to Datahub Admin",
-    "copyright": "cadditech",
+    "copyright": "datahub",
     "show_sidebar": True,
     "navigation_expanded": True,
     "topmenu_links": [
@@ -236,3 +236,7 @@ DEFAULT_FROM_EMAIL = 'DataHub <datahubone@gmail.com>'
 # import os
 # EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 # EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+#relax
+
+TEST_SECRET_KEY = env("TEST_SECRET_KEY")
+TEST_PUBLIC_KEY = env("TEST_PUBLIC_KEY")    

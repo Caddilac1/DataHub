@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <title>DataHub - Your Data Connection</title>
+</head>
+<body>
+    <div class="container">
+        <div class="navbar">
+            <div class="navbar-brand">
+                DataHub
+            </div>
+            
+            <div class="navbar-menu">
+                <a class="navbar-item active" data-nav="dashboard">Dashboard</a>
+                <a class="navbar-item" data-nav="orders">Recent Orders</a>
+                <a class="navbar-item" data-nav="history">Order History</a>
+                <a class="navbar-item" data-nav="profile">Profile</a>
+            </div>
+            
+            <div class="profile-avatar" id="profileAvatar">{{ request.user.full_name|slice:":1"|upper }}</div>
+            <button class="logout-btn" onclick="logoutUser()">Logout</button>
+        </div>
+
+        <div id="particles"></div>
+
+        <div class="header fade-in-up">
+            <h1>DataHub</h1>
+            <div class="greeting" id="greeting">Welcome, {{ request.user.full_name }}! 👋</div>
+            <p>Your Reliable Data Connection Partner in Ghana</p>
+        </div>
+
+        <div class="warning-notice fade-in-up">
+            <h3>⚠️ STRICT POLICY: NO SOCIAL MEDIA ADVERTISING</h3>
+            <p><strong>We do NOT allow social media advertisements of our services. If we find this page or our services advertised on your social media accounts, your account will be PERMANENTLY DELETED from our system without warning.</strong></p>
+            <p>This policy is strictly enforced to maintain service quality and prevent abuse. No exceptions will be made.</p>
+            <h3 style="margin-top: 15px;">Important Notice</h3>
+            <p>Turbonet and Broadband Sim Cards are <strong>not eligible for this offer</strong>.</p>
+            <ul>
+                <li>Please do not place orders for the same number at the same time interval. One will be rejected and <strong>no refund will be provided</strong>.</li>
+                <li>Data bundle delivery is not instant. Some numbers may receive data faster while others take some time.</li>
+                <li>No refunds will be issued for wrong transactions or incorrect phone numbers.</li>
+                <li>Please verify your phone number carefully before making a purchase.</li>
+            </ul>
+        </div>
+
+        <div class="service-notice fade-in-up">
+            <h3>Important Service Notice</h3>
+            <p><strong>Please Note Before Proceeding:</strong></p>
+            <ul>
+                <li>This is <strong>not an instant service</strong>. Data delivery times vary between customers.</li>
+                <li>We are working diligently to process all orders, but there may be delays.</li>
+                <li>If you need immediate data for urgent matters, please dial <strong>*138#</strong> on your MTN line instead.</li>
+                <li>Once ordered, please be patient as we process your request.</li>
+                <li>For instant bundles, this service is not suitable.</li>
+            </ul>
+            <p style="margin-top: 10px;"><em>We value your business and are committed to delivering quality service. Thank you for your understanding and patience.</em></p>
+        </div>
+
+        <div class="content-section active" id="dashboard">
+            <div class="dashboard">
+                {% for telco_name, plans in data_plans.items %}
+                    <div class="network-card">
+                        <div class="stock-status stock-in">IN STOCK</div>
+                        <div class="network-header">
+                            <div class="network-logo">{{ telco_name|slice:":3"|upper }}</div>
+                            <div class="network-name">{{ telco_name }}</div>
+                        </div>
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <div class="stat-number">N/A</div>
+                                <div class="stat-label">Orders Today</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number">N/A</div>
+                                <div class="stat-label">Success Rate</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number">N/A</div>
+                                <div class="stat-label">Avg Processing</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number">24/7</div>
+                                <div class="stat-label">Available</div>
+                            </div>
+                        </div>
+                        <button class="buy-btn" onclick="openModal('{{ telco_name }}')">Buy Data Bundle</button>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="content-section" id="orders">
+            <div class="orders-section">
+                <h2>📋 Recent Orders (Last 24 Hours)</h2>
+                <div style="overflow-x: auto;">
+                    <table class="orders-table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Network</th>
+                                <th>Phone Number</th>
+                                <th>Data Size</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Date & Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_orders %}
+                            <tr>
+                                <td>{{ order.id }}</td>
+                                <td>{{ order.telco.name }}</td>
+                                <td>{{ order.phone_number|slice:"0:4" }}******{{ order.phone_number|slice:"8:10" }}</td>
+                                <td>{{ order.bundle.size_mb|divisibleby:1000|yesno:"GB,MB" }}</td>
+                                <td>GH₵ {{ order.payment.amount }}</td>
+                                <td><span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span></td>
+                                <td>{{ order.created_at|date:"Y-m-d H:i" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7">You have no recent orders.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-section" id="history">
+            <div class="orders-section">
+                <h2>📚 Complete Order History</h2>
+                <div style="overflow-x: auto;">
+                    <table class="orders-table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Network</th>
+                                <th>Phone Number</th>
+                                <th>Data Size</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Date & Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in order_history %}
+                            <tr>
+                                <td>{{ order.id }}</td>
+                                <td>{{ order.telco.name }}</td>
+                                <td>{{ order.phone_number|slice:"0:4" }}******{{ order.phone_number|slice:"8:10" }}</td>
+                                <td>{{ order.bundle.size_mb|divisibleby:1000|yesno:"GB,MB" }}</td>
+                                <td>GH₵ {{ order.payment.amount }}</td>
+                                <td><span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span></td>
+                                <td>{{ order.created_at|date:"Y-m-d H:i" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7">Your order history is empty.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-section" id="profile">
+            <div class="orders-section">
+                <h2>👤 Profile Information</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; position: relative; z-index: 1;">
+                    <div style="background: linear-gradient(135deg, #f8f9fa, #e9ecef); padding: 25px; border-radius: 20px; border: 2px solid rgba(76, 175, 80, 0.2);">
+                        <h3 style="color: #2c3e50; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                            📝 Account Details
+                        </h3>
+                        <p><strong>Full Name:</strong> <span id="userFullName">{{ request.user.full_name }}</span></p>
+                        <p><strong>Username:</strong> <span id="username">{{ request.user.email }}</span></p>
+                        <p><strong>Email:</strong> <span id="userEmail">{{ request.user.email }}</span></p>
+                        <p><strong>Date Joined:</strong> <span id="dateJoined">{{ request.user.date_joined|date:"M j, Y" }}</span></p>
+                    </div>
+                    
+                    <div style="background: linear-gradient(135deg, #e8f5e8, #d4edda); padding: 25px; border-radius: 20px; border: 2px solid rgba(76, 175, 80, 0.3);">
+                        <h3 style="color: #2c3e50; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                            📊 Account Statistics
+                        </h3>
+                        <p><strong>Total Orders:</strong> <span style="color: #4CAF50; font-weight: bold;" id="totalOrders">{{ total_orders }}</span></p>
+                        <p><strong>Successful Orders:</strong> <span style="color: #4CAF50; font-weight: bold;" id="successfulOrders">{{ successful_orders }}</span></p>
+                        <p><strong>Success Rate:</strong> <span style="color: #4CAF50; font-weight: bold;" id="successRate">{{ success_rate }}%</span></p>
+                        <p><strong>Total Spent:</strong> <span style="color: #4CAF50; font-weight: bold;" id="totalSpent">GH₵ {{ total_spent }}</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="purchaseModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h3 id="modalTitle">Purchase Data Bundle</h3>
+            
+            <div class="modal-notice">
+                <strong>⚠️ Important Reminders:</strong><br>
+                • Double-check your phone number before purchasing<br>
+                • Data delivery is <strong>not instant</strong> - please be patient<br>
+                • No refunds for wrong numbers or duplicate orders
+            </div>
+            
+            <div class="data-plans" id="dataPlans">
+                {% for telco_name, plans in data_plans.items %}
+                    <div class="plans-group" data-telco="{{ telco_name }}">
+                        <h3>{{ telco_name }} Bundles</h3>
+                        {% for plan in plans %}
+                            <div class="plan-item" data-id="{{ plan.id }}" data-price="{{ plan.price }}">
+                                <span class="plan-size">{{ plan.size }}</span>
+                                <span class="plan-validity">{{ plan.validity }}</span>
+                                <span class="plan-price">GH₵ {{ plan.price }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+            <form method="post" action="." data-payment-url="{% url 'payment_initiate' %}">
+                {% csrf_token %}
+            <input type="tel" class="phone-input" id="phoneInput" placeholder="Enter phone number (must start with 0)" maxlength="10">
+            <div class="input-error" id="phoneError" style="display: none;"></div>
+            
+            <div id="selectedPlan" style="display: none; background: linear-gradient(135deg, #e8f5e8, #d4edda); padding: 20px; border-radius: 15px; margin-bottom: 25px; border: 2px solid #4CAF50;">
+                <div style="font-weight: bold; margin-bottom: 8px; color: #2c3e50;">Selected Plan:</div>
+                <div id="selectedPlanDetails"></div>
+            </div>
+
+            <button class="purchase-btn" id="purchaseBtn" onclick="processPurchase(event)" disabled>
+                Complete Purchase
+            </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Data is now rendered directly in the template, no need for JSON variable
+        // The purchase modal will require some JS to function, but it won't be using the JSON data.
+        // It will need to handle the phone number input and selected plan logic.
+        // Global variables
+let selectedNetwork = '';
+let selectedPlan = null;
+const purchaseModal = document.getElementById('purchaseModal');
+const purchaseForm = document.getElementById('purchaseForm');
+const closeBtn = document.querySelector('.modal .close-btn');
+
+// Stock status simulation (remains a JS-based mock for now)
+const stockStatuses = {
+    'MTN': 'in-stock',
+    'AirtelTigo': 'limited',
+    'Telecel': 'out-of-stock'
+};
+
+// Create floating particles
+function createParticles() {
+    const particlesContainer = document.getElementById('particles');
+    if (!particlesContainer) return;
+    for (let i = 0; i < 6; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + 'vw';
+        particle.style.width = Math.random() * 8 + 4 + 'px';
+        particle.style.height = particle.style.width;
+        particle.style.animationDelay = Math.random() * 15 + 's';
+        particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+        particlesContainer.appendChild(particle);
+    }
+}
+
+// Animate counting numbers
+function animateCountUp(element, target, duration = 2000) {
+    const start = 0;
+    const startTime = performance.now();
+    const isDecimal = target.toString().includes('.');
+    
+    function updateCount(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const current = start + (target - start) * easeOutExpo(progress);
+        
+        if (isDecimal) {
+            element.textContent = current.toFixed(1);
+        } else {
+            element.textContent = Math.floor(current);
+        }
+        
+        if (progress < 1) {
+            requestAnimationFrame(updateCount);
+        }
+    }
+    
+    requestAnimationFrame(updateCount);
+}
+
+function easeOutExpo(t) {
+    return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+}
+
+// Dynamic greeting based on time
+function setGreeting() {
+    const now = new Date();
+    const hour = now.getHours();
+    const greetingEl = document.getElementById('greeting');
+    if (!greetingEl) return;
+    
+    const userFullName = greetingEl.dataset.user || "Guest";
+    
+    let greeting;
+    if (hour < 12) {
+        greeting = `Good Morning, ${userFullName}! Welcome to DataHub 🌅`;
+    } else if (hour < 17) {
+        greeting = `Good Afternoon, ${userFullName}! Welcome to DataHub ☀️`;
+    } else {
+        greeting = `Good Evening, ${userFullName}! Welcome to DataHub 🌙`;
+    }
+
+    greetingEl.textContent = greeting;
+}
+
+// Update stock status dynamically
+function updateStockStatus(network, status) {
+    const card = document.querySelector(`.network-card[data-network="${network.toLowerCase()}"]`);
+    if (!card) return;
+
+    const statusBadge = card.querySelector('.stock-status');
+    const buyBtn = card.querySelector('.buy-btn');
+
+    card.classList.remove('out-of-stock', 'limited-stock');
+    statusBadge.classList.remove('stock-in', 'stock-out', 'stock-limited');
+
+    switch(status) {
+        case 'out-of-stock':
+            card.classList.add('out-of-stock');
+            statusBadge.classList.add('stock-out');
+            statusBadge.textContent = 'OUT OF STOCK';
+            buyBtn.disabled = true;
+            buyBtn.textContent = 'Currently Unavailable';
+            break;
+        case 'limited':
+            card.classList.add('limited-stock');
+            statusBadge.classList.add('stock-limited');
+            statusBadge.textContent = 'LIMITED';
+            buyBtn.disabled = false;
+            buyBtn.textContent = 'Buy Data Bundle';
+            break;
+        default:
+            statusBadge.classList.add('stock-in');
+            statusBadge.textContent = 'IN STOCK';
+            buyBtn.disabled = false;
+            buyBtn.textContent = 'Buy Data Bundle';
+    }
+}
+
+// Tab navigation with enhanced animations
+function initNavigation() {
+    document.querySelectorAll('[data-nav]').forEach(navItem => {
+        navItem.addEventListener('click', function(e) {
+            e.preventDefault();
+            const tabId = this.dataset.nav;
+            switchToTab(tabId);
+            
+            document.querySelectorAll('[data-nav]').forEach(item => item.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+}
+
+// Switch to tab function
+function switchToTab(tab) {
+    document.querySelectorAll('.content-section').forEach(section => {
+        section.style.opacity = '0';
+        section.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            section.classList.remove('active');
+        }, 200);
+    });
+    
+    if (tab !== 'dashboard') {
+        document.body.classList.add('hidden-notices');
+    } else {
+        document.body.classList.remove('hidden-notices');
+    }
+    
+    const targetSection = document.getElementById(tab);
+    if (targetSection) {
+        setTimeout(() => {
+            targetSection.classList.add('active');
+            targetSection.style.opacity = '1';
+            targetSection.style.transform = 'translateY(0)';
+        }, 300);
+    }
+}
+
+// Open modal for purchasing data
+function openModal(network) {
+    const card = document.querySelector(`.network-card[data-network="${network.toLowerCase()}"]`);
+    if (card && card.classList.contains('out-of-stock')) {
+        showMessage('This network is currently out of stock. Please try another network.', 'error');
+        return;
+    }
+    if (!purchaseModal) return;
+
+    selectedNetwork = network;
+    document.getElementById('modalTitle').textContent = `Purchase ${network} Data Bundle`;
+    
+    document.querySelectorAll('.plans-group').forEach(group => {
+        if (group.dataset.telco === network) {
+            group.style.display = 'block';
+        } else {
+            group.style.display = 'none';
+        }
+    });
+
+    document.querySelectorAll('.plan-item').forEach(p => p.classList.remove('selected'));
+    
+    document.querySelectorAll(`.plans-group[data-telco="${network}"] .plan-item`).forEach(planElement => {
+        planElement.addEventListener('click', function() {
+            document.querySelectorAll(`.plans-group[data-telco="${network}"] .plan-item`).forEach(p => p.classList.remove('selected'));
+            this.classList.add('selected');
+
+            selectedPlan = {
+                id: this.dataset.id,
+                size: this.querySelector('.plan-size').textContent,
+                price: this.querySelector('.plan-price').textContent,
+                validity: this.querySelector('.plan-validity').textContent.replace('Valid for ', '')
+            };
+            
+            updateSelectedPlan();
+            checkFormValidity();
+            
+            this.style.transform = 'scale(1.05)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 200);
+        });
+    });
+    
+    purchaseModal.style.display = 'block';
+    document.getElementById('phoneInput').value = '';
+    document.getElementById('phoneError').style.display = 'none';
+    selectedPlan = null;
+    updateSelectedPlan();
+    checkFormValidity();
+}
+
+// Close modal with animation
+function closeModal() {
+    if (!purchaseModal) return;
+    const modalContent = purchaseModal.querySelector('.modal-content');
+    
+    modalContent.style.transform = 'translate(-50%, -50%) scale(0.8)';
+    modalContent.style.opacity = '0';
+    purchaseModal.style.opacity = '0';
+    
+    setTimeout(() => {
+        purchaseModal.style.display = 'none';
+        modalContent.style.transform = 'translate(-50%, -50%) scale(1)';
+        modalContent.style.opacity = '1';
+        purchaseModal.style.opacity = '1';
+    }, 300);
+}
+
+// Update selected plan display
+function updateSelectedPlan() {
+    const selectedPlanDiv = document.getElementById('selectedPlan');
+    const selectedPlanDetails = document.getElementById('selectedPlanDetails');
+    if (!selectedPlanDiv) return;
+    
+    if (selectedPlan) {
+        selectedPlanDiv.style.display = 'block';
+        selectedPlanDiv.style.animation = 'fadeInScale 0.5s ease-out';
+        selectedPlanDetails.innerHTML = `
+            <strong style="color: #2c3e50; font-size: 1.1rem;">${selectedPlan.size}</strong> - <span style="color: #4CAF50; font-weight: bold;">${selectedPlan.price}</span><br>
+            <small style="color: #6c757d;">${selectedPlan.validity}</small>
+        `;
+    } else {
+        selectedPlanDiv.style.display = 'none';
+    }
+}
+
+// Enhanced message system
+function showMessage(text, type = 'info') {
+    const existingMessage = document.querySelector('.message');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+
+    const message = document.createElement('div');
+    message.className = `message ${type}`;
+    message.textContent = text;
+    
+    const header = document.querySelector('.header');
+    if (header) {
+        header.parentNode.insertBefore(message, header.nextSibling);
+    } else {
+        document.body.prepend(message);
+    }
+    
+    setTimeout(() => {
+        message.style.opacity = '0';
+        message.style.transform = 'translateY(-20px)';
+        setTimeout(() => message.remove(), 300);
+    }, 5000);
+}
+
+// Validate phone number
+function validatePhone(phone) {
+    const phoneRegex = /^0\d{9}$/;
+    return phoneRegex.test(phone);
+}
+
+// Check form validity
+function checkFormValidity() {
+    const phoneInput = document.getElementById('phoneInput');
+    const purchaseBtn = document.getElementById('purchaseBtn');
+    const phoneError = document.getElementById('phoneError');
+    if (!phoneInput || !purchaseBtn) return;
+    
+    const phone = phoneInput.value;
+    const isPhoneValid = validatePhone(phone);
+    const isPlanSelected = selectedPlan !== null;
+    
+    if (phone.length > 0) {
+        if (!phone.startsWith('0')) {
+            phoneError.textContent = 'Phone number must start with 0';
+            phoneError.style.display = 'block';
+            phoneInput.classList.add('error');
+        } else if (phone.length !== 10) {
+            phoneError.textContent = 'Phone number must be exactly 10 digits';
+            phoneError.style.display = 'block';
+            phoneInput.classList.add('error');
+        } else if (!isPhoneValid) {
+            phoneError.textContent = 'Please enter a valid phone number';
+            phoneError.style.display = 'block';
+            phoneInput.classList.add('error');
+        } else {
+            phoneError.style.display = 'none';
+            phoneInput.classList.remove('error');
+            phoneInput.style.borderColor = '#4CAF50';
+            setTimeout(() => {
+                phoneInput.style.borderColor = '';
+            }, 1000);
+        }
+    } else {
+        phoneError.style.display = 'none';
+        phoneInput.classList.remove('error');
+    }
+    
+    const wasDisabled = purchaseBtn.disabled;
+    purchaseBtn.disabled = !(isPhoneValid && isPlanSelected);
+    
+    if (wasDisabled && !purchaseBtn.disabled) {
+        purchaseBtn.style.transform = 'scale(1.05)';
+        setTimeout(() => {
+            purchaseBtn.style.transform = '';
+        }, 200);
+    }
+}
+
+// Phone input validation
+function initPhoneValidation() {
+    const phoneInput = document.getElementById('phoneInput');
+    if (!phoneInput) return;
+    
+    phoneInput.addEventListener('input', function() {
+        this.value = this.value.replace(/\D/g, '');
+        
+        if (this.value.length > 0 && !this.value.startsWith('0')) {
+            this.value = '0' + this.value.slice(0, 9);
+        }
+        
+        if (this.value.length > 10) {
+            this.value = this.value.slice(0, 10);
+        }
+        
+        checkFormValidity();
+    });
+
+    phoneInput.addEventListener('focus', function() {
+        this.style.transform = 'scale(1.02)';
+    });
+
+    phoneInput.addEventListener('blur', function() {
+        this.style.transform = '';
+    });
+}
+
+// Process purchase
+function processPurchase(event) {
+    event.preventDefault(); // Prevent the default form submission
+    
+    const phoneNumber = document.getElementById('phoneInput').value;
+    const purchaseBtn = document.getElementById('purchaseBtn');
+    
+    if (!selectedPlan || !validatePhone(phoneNumber)) {
+        showMessage('Please select a plan and enter a valid phone number.', 'error');
+        return;
+    }
+    
+    purchaseBtn.innerHTML = 'Processing... <span class="loading"></span>';
+    purchaseBtn.disabled = true;
+    
+    const formData = new FormData();
+    formData.append('bundle_id', selectedPlan.id);
+    formData.append('phone_number', phoneNumber);
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch('{% url "payment_initiate" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: formData,
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => { throw new Error(err.message || 'Server error'); });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            window.location.href = data.authorization_url;
+        } else {
+            showMessage(data.message || 'An error occurred. Please try again.', 'error');
+            closeModal();
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        showMessage('Network error. Please check your connection.', 'error');
+        closeModal();
+    });
+}
+
+function handlePaymentStatus() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment_status');
+    const orderId = urlParams.get('order_id');
+    const errorMessage = urlParams.get('message');
+    
+    if (paymentStatus === 'success') {
+        showMessage(`Payment successful! Order ${orderId} is being processed.`, 'success');
+    } else if (paymentStatus === 'failed') {
+        showMessage('Payment failed. Please try again or use another payment method.', 'error');
+    } else if (paymentStatus === 'error') {
+        showMessage(`An error occurred during payment: ${errorMessage}`, 'error');
+    }
+
+    if (paymentStatus) {
+        history.replaceState(null, '', window.location.pathname);
+    }
+}
+
+// Modal click handler
+function initModalClickHandler() {
+    window.addEventListener('click', function(event) {
+        if (event.target === purchaseModal) {
+            closeModal();
+        }
+    });
+}
+
+// Real-time updates simulation
+function startRealTimeUpdates() {
+    setInterval(() => {
+        const statNumbers = document.querySelectorAll('.stat-number');
+        statNumbers.forEach((stat) => {
+            if (stat.dataset.target) {
+                return;
+            }
+            if (stat.textContent && !isNaN(parseInt(stat.textContent)) && Math.random() > 0.97) {
+                const currentValue = parseInt(stat.textContent);
+                const newValue = currentValue + Math.floor(Math.random() * 3) + 1;
+                
+                stat.style.transform = 'scale(1.2)';
+                stat.style.color = '#4CAF50';
+                
+                setTimeout(() => {
+                    stat.textContent = newValue;
+                    setTimeout(() => {
+                        stat.style.transform = '';
+                        stat.style.color = '';
+                    }, 200);
+                }, 100);
+            }
+        });
+
+        if (Math.random() > 0.995) {
+            const networks = ['MTN', 'AirtelTigo', 'Telecel'];
+            const statuses = ['in-stock', 'limited', 'out-of-stock'];
+            const randomNetwork = networks[Math.floor(Math.random() * networks.length)];
+            const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+            
+            stockStatuses[randomNetwork] = randomStatus;
+            updateStockStatus(randomNetwork, randomStatus);
+        }
+    }, 2000);
+}
+
+// Initialize counting animations
+function initCountAnimations() {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const target = entry.target;
+                const finalValue = parseFloat(target.dataset.target);
+                if (!isNaN(finalValue)) {
+                    animateCountUp(target, finalValue);
+                    observer.unobserve(target);
+                }
+            }
+        });
+    }, { threshold: 0.5 });
+
+    document.querySelectorAll('[data-target]').forEach(el => {
+        observer.observe(el);
+    });
+}
+
+// Logout function
+function logoutUser() {
+    if (confirm('Are you sure you want to logout?')) {
+        const form = document.createElement('form');
+        form.method = 'post';
+        form.action = '{% url "signout" %}';
+        
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        if (csrfToken) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = csrfToken;
+            form.appendChild(csrfInput);
+        }
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Enhanced CSS transition styles
+function addTransitionStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .content-section {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .phone-input, .purchase-btn, .buy-btn {
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .plans-group {
+            display: none;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// Initialize everything
+document.addEventListener('DOMContentLoaded', function() {
+    createParticles();
+    addTransitionStyles();
+    setGreeting();
+    initNavigation();
+    initPhoneValidation();
+    initModalClickHandler();
+    initCountAnimations();
+    startRealTimeUpdates();
+    handlePaymentStatus(); // Moved here to be called on initial page load
+
+    document.querySelectorAll('.buy-btn').forEach(button => {
+        const card = button.closest('.network-card');
+        const networkName = card.querySelector('.network-name').textContent.trim();
+        button.addEventListener('click', () => openModal(networkName));
+    });
+    
+    // Attach the event listener for the payment form submission
+    if (purchaseForm) {
+        purchaseForm.addEventListener('submit', processPurchase);
+    }
+    
+    document.body.style.opacity = '0';
+    setTimeout(() => {
+        document.body.style.transition = 'opacity 0.5s ease';
+        document.body.style.opacity = '1';
+    }, 100);
+});
+
+// Keyboard navigation
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        if (purchaseModal.style.display === 'block') {
+            closeModal();
+        }
+    }
+});
+
+// Performance optimization
+document.addEventListener('visibilitychange', function() {
+    const particles = document.querySelectorAll('.particle');
+    particles.forEach(particle => {
+        if (document.hidden) {
+            particle.style.animationPlayState = 'paused';
+        } else {
+            particle.style.animationPlayState = 'running';
+        }
+    });
+});
+    </script>
+    <script src="{% static 'js/testhome.js' %}"></script>
+    {% include 'components/messages.html' %}
+</body>
+</html>

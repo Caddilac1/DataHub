@@ -24,12 +24,15 @@ from .signals import set_request_context, log_custom_action
 
 
 # --- General Admin Configuration ---
+# --- General Admin Configuration ---
 @admin.register(LogEntry)
 class LogEntryAdmin(admin.ModelAdmin):
     list_display = ('action_time', 'user', 'content_type', 'object_repr', 'action_flag', 'change_message')
     list_filter = ('user', 'content_type', 'action_flag')
     search_fields = ('object_repr', 'change_message')
 
+
+# --- Custom Filters ---
 
 # --- Custom Filters ---
 class AccountStatusFilter(SimpleListFilter):
@@ -396,7 +399,7 @@ class TelcoAdmin(admin.ModelAdmin):
         count = obj.bundle_set.filter(is_active=True).count()
         # Ensure the app name is correct in the reverse URL
         app_name = obj._meta.app_label
-        url = reverse(f'admin:authentication_bundle_changelist') + f'?telcoid_exact={obj.id}'
+        url = reverse(f'admin:{app_name}_bundle_changelist') + f'?telco__id__exact={obj.id}'
         return format_html('<a href="{}">{} bundles</a>', url, count)
     bundle_count.short_description = 'Active Bundles'
 
@@ -479,7 +482,7 @@ class BundleAdmin(admin.ModelAdmin):
         count = obj.databundleorder_set.count()
         # Ensure the app name is correct in the reverse URL
         app_name = obj._meta.app_label
-        url = reverse(f'admin:authentication_databundleorder_changelist') + f'?bundleid_exact={obj.id}'
+        url = reverse(f'admin:{app_name}_databundleorder_changelist') + f'?bundle__id__exact={obj.id}'
         return format_html('<a href="{}">{}</a>', url, count)
     order_count.short_description = 'Orders'
 

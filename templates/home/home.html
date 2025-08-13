@@ -368,14 +368,9 @@
         </div>
     </div>
 <script src="{% static 'js/home.js' %}"></script>
-
 <script>
     const dataPlans = {{ data_plans_json|safe }};
     window.userFullName = "{{ request.user.full_name|escapejs }}";
-    updateStockStatus(
-    "{{ telco.code|escapejs }}",
-    "{{ telco.stock_status|escapejs }}"
-    );
 </script>
     
      {% include 'components/messages.html' %}

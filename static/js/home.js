@@ -9,6 +9,13 @@ const stockStatuses = {
     'Telecel': 'out-of-stock'
 };
 
+const telcoIdMap = {
+    'YELLO': 'mtn-card',
+    'AT': 'airteltigo-card',
+    'TELECEL': 'telecel-card'
+};
+
+
 // Create floating particles
 function createParticles() {
     const particlesContainer = document.getElementById('particles');

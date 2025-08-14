@@ -5,6 +5,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from threading import local
+from system.services import handle_successful_payment
 
 from .models import (
     AuditLog, 
@@ -317,9 +318,10 @@ def order_post_save_handler(sender, instance, created, **kwargs):
 # ---------- Payment-Related Signals ----------
 @receiver(post_save, sender=Payment)
 def payment_post_save_handler(sender, instance, created, **kwargs):
-    """Handle payment creation and updates."""
+    """Handle payment creation, updates, and DataMart purchases."""
     original = _original_instances.cache.pop(instance.pk, None)
 
+    # ===== CASE 1: New payment created =====
     if created:
         create_audit_log(
             action='payment_initiated',
@@ -334,6 +336,13 @@ def payment_post_save_handler(sender, instance, created, **kwargs):
             ip_address=instance.ip_address,
             user_agent=instance.user_agent
         )
+
+        
+        if instance.status == "success":
+            print(f"[Datamart Trigger] New successful payment: {instance.id}")
+            handle_successful_payment(instance.order_id)
+
+    # ===== CASE 2: Existing payment updated =====
     elif original and original.status != instance.status:
         action_map = {
             'success': 'payment_completed',
@@ -343,7 +352,7 @@ def payment_post_save_handler(sender, instance, created, **kwargs):
         }
         
         action = action_map.get(instance.status, 'payment_status_changed')
-        
+
         create_audit_log(
             action=action,
             user=instance.order.user,
@@ -358,6 +367,10 @@ def payment_post_save_handler(sender, instance, created, **kwargs):
             }
         )
 
+        
+        if instance.status == "success":
+            print(f"[Datamart Trigger] Payment status changed to success: {instance.id}")
+            handle_successful_payment(instance.order_id)
 
 # ---------- Bundle & Telco Signals ----------
 @receiver(post_save, sender=Bundle)
@@ -465,8 +478,7 @@ def log_custom_action(action, user=None, details=None, request=None):
         details=details or {},
         ip_address=ip_address,
         user_agent=user_agent
-    )
-
+    )            
 
 # ---------- Cleanup Signal (Optional) ----------
 @receiver(post_save, sender=AuditLog)

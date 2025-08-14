@@ -182,12 +182,14 @@ class PaymentView(LoginRequiredMixin, View):
                 reference = str(uuid.uuid4())
                 
                 # Create the payment record linked to the order
+                logger.info(f"Creating payment record for order {order.id}")
                 payment = Payment.objects.create(
                     order=order,
                     amount=bundle.price,
                     reference=reference,
                     status='pending'
                 )
+                logger.info(f"Payment record created: {payment.id}")
 
                 # Build the callback URL for Paystack to redirect to
                 callback_url = request.build_absolute_uri(reverse('payment_callback'))

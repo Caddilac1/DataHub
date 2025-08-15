@@ -513,3 +513,79 @@ class AuditLog(models.Model):
 
     def __str__(self):
         return f"{self.action} - {self.user} - {self.created_at}"
+    
+
+
+# Add this to your models.py
+
+class SystemConfiguration(models.Model):
+    """System-wide configuration settings that admins can control."""
+    
+    CONFIG_CHOICES = [
+        ('auto_api_trigger', 'Auto API Trigger'),
+        ('maintenance_mode', 'Maintenance Mode'),
+        ('email_notifications', 'Email Notifications'),
+        # Add more configuration options as needed
+    ]
+    
+    key = models.CharField(max_length=50, choices=CONFIG_CHOICES, unique=True)
+    value = models.BooleanField(default=True)
+    description = models.TextField(blank=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        limit_choices_to={'role': 'admin'}
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "System Configuration"
+        verbose_name_plural = "System Configurations"
+    
+    def __str__(self):
+        return f"{self.get_key_display()}: {'Enabled' if self.value else 'Disabled'}"
+    
+    @classmethod
+    def get_config_value(cls, key, default=True):
+        """Get configuration value by key, with fallback to default."""
+        try:
+            config = cls.objects.get(key=key)
+            return config.value
+        except cls.DoesNotExist:
+            # Create the config with default value if it doesn't exist
+            cls.objects.create(key=key, value=default)
+            return default
+    
+    @classmethod
+    def is_auto_api_trigger_enabled(cls):
+        """Check if automatic API triggering is enabled."""
+        return cls.get_config_value('auto_api_trigger', default=True)
+    
+    @classmethod
+    def enable_auto_api_trigger(cls, admin_user):
+        """Enable automatic API triggering."""
+        config, created = cls.objects.get_or_create(
+            key='auto_api_trigger',
+            defaults={'value': True, 'updated_by': admin_user}
+        )
+        if not created:
+            config.value = True
+            config.updated_by = admin_user
+            config.save()
+        return config
+    
+    @classmethod
+    def disable_auto_api_trigger(cls, admin_user):
+        """Disable automatic API triggering."""
+        config, created = cls.objects.get_or_create(
+            key='auto_api_trigger',
+            defaults={'value': False, 'updated_by': admin_user}
+        )
+        if not created:
+            config.value = False
+            config.updated_by = admin_user
+            config.save()
+        return config

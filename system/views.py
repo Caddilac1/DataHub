@@ -165,9 +165,11 @@ class PaymentView(LoginRequiredMixin, View):
         try:
             with transaction.atomic():
                 bundle = get_object_or_404(Bundle, pk=bundle_id)
+                logger.info(f"Successfully retrieved bundle with ID: {bundle_id}")
                 user = request.user
                 
                 # Create the order first
+                logger.info("Attempting to create order and payment...")
                 order = DataBundleOrder.objects.create(
                     user=user,
                     telco=bundle.telco,
@@ -177,20 +179,24 @@ class PaymentView(LoginRequiredMixin, View):
                     ip_address=request.META.get('REMOTE_ADDR'),
                     user_agent=request.META.get('HTTP_USER_AGENT', '')
                 )
+                logger.info(f"Order {order.id} created successfully.")
                 
                 # Generate a unique reference ID for the Paystack transaction
                 reference = str(uuid.uuid4())
                 
                 # Create the payment record linked to the order
+                
                 payment = Payment.objects.create(
                     order=order,
                     amount=bundle.price,
                     reference=reference,
                     status='pending'
                 )
+                logger.info(f"Payment {payment.id} with reference {reference} created successfully.")
 
                 # Build the callback URL for Paystack to redirect to
                 callback_url = request.build_absolute_uri(reverse('payment_callback'))
+                logger.info(f"Initializing Paystack payment for user {user.email}, reference {reference}.")
                 
                 paystack_response = initialize_paystack_payment(
                     email=user.email,

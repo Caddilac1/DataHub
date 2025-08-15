@@ -2,6 +2,7 @@
 import requests
 from django.conf import settings
 
+
 PAYSTACK_API_BASE_URL = 'https://api.paystack.co'
 
 def initialize_paystack_payment(email, amount, reference, callback_url):

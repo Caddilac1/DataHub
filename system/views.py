@@ -168,8 +168,7 @@ class PaymentView(LoginRequiredMixin, View):
                 logger.info(f"Successfully retrieved bundle with ID: {bundle_id}")
                 user = request.user
                 
-                # Create the order first
-                logger.info("Attempting to create order and payment...")
+                # Create the order first 
                 order = DataBundleOrder.objects.create(
                     user=user,
                     telco=bundle.telco,

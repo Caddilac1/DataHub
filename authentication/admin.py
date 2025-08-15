@@ -18,7 +18,8 @@ from .models import (
     Bundle,
     DataBundleOrder,
     Payment,
-    AuditLog
+    AuditLog,
+    SystemConfiguration
 )
 from .signals import set_request_context, log_custom_action
 
@@ -816,3 +817,23 @@ class AuditLogAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('user')
+    
+
+
+@admin.register(SystemConfiguration)
+class SystemConfigurationAdmin(admin.ModelAdmin):
+    list_display = ['key', 'value', 'updated_by', 'updated_at']
+    list_filter = ['key', 'value', 'updated_at']
+    readonly_fields = ['created_at', 'updated_at']
+    
+    def save_model(self, request, obj, form, change):
+        obj.updated_by = request.user
+        super().save_model(request, obj, form, change)
+    
+    def has_delete_permission(self, request, obj=None):
+        # Prevent deletion of critical system configs
+        return False
+    
+    def has_add_permission(self, request):
+        # Only allow adding if user is admin
+        return request.user.is_superuser or request.user.role == 'admin'

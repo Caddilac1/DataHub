@@ -230,6 +230,7 @@ class PaymentView(LoginRequiredMixin, View):
                     
                     order.status = 'paid' # 'paid' status before fulfillment begins
                     order.save()
+                    recheck_datamart_status(order.id)
                     
                     # Log successful payment for internal records
                     logger.info(f"Payment successful for order {order.id}. Reference: {reference}")

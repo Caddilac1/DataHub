@@ -239,3 +239,17 @@ TEST_SECRET_KEY = env("TEST_SECRET_KEY")
 TEST_PUBLIC_KEY = env("TEST_PUBLIC_KEY")    
 # settings.py
 DATAMART_API_KEY = env("DATAMART_API_KEY")
+
+
+# settings.py
+
+# Redis as broker
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
+
+# Optional settings
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+

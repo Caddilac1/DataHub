@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+import logging
 import environ
 env = environ.Env()
 environ.Env.read_env()
@@ -34,7 +35,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-SITE_ID = 2
+SITE_ID = 1
 
 
 # Application definition
@@ -199,22 +200,18 @@ JAZZMIN_SETTINGS = {
 
 LOGGING = {
     'version': 1,
+    'disable_existing_loggers': False,  # important for Django
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
         },
     },
-    'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'level': 'INFO',
-        },
-        '__main__': {
-            'handlers': ['console'],
-            'level': 'INFO',
-        },
-    }
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
 }
+
 
 
 if DEBUG:
@@ -240,3 +237,5 @@ DEFAULT_FROM_EMAIL = 'DataHub <datahubone@gmail.com>'
 
 TEST_SECRET_KEY = env("TEST_SECRET_KEY")
 TEST_PUBLIC_KEY = env("TEST_PUBLIC_KEY")    
+# settings.py
+DATAMART_API_KEY = env("DATAMART_API_KEY")

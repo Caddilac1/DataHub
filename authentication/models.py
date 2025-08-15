@@ -410,6 +410,7 @@ class DataBundleOrder(models.Model):
     phone_number = models.CharField(max_length=15)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     provider_order_id = models.CharField(max_length=100, blank=True, null=True)
+    provider_status = models.CharField(max_length=20, blank=True, null=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -453,7 +454,7 @@ class Payment(models.Model):
     status = models.CharField(max_length=20, choices=PAYMENT_STATUS, default='pending')
     paid_at = models.DateTimeField(blank=True, null=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
-    user_agent = models.TextField(blank=True)
+    user_agent = models.TextField(blank=True,null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -500,7 +501,7 @@ class AuditLog(models.Model):
     action = models.CharField(max_length=30, choices=ACTION_CHOICES)
     details = models.JSONField(default=dict, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
-    user_agent = models.TextField(blank=True)
+    user_agent = models.TextField(blank=True,null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

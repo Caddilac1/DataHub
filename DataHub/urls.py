@@ -23,5 +23,5 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')), 
     path('', include('system.urls')),
     path('', include('authentication.urls')),
-    path('dashborad/agent/', include('agentapp.urls')),  # Include the URLs from the 'system' app
+    path('dashboard/agent/', include('agentapp.urls')),  # Include the URLs from the 'system' app
 ]

@@ -21,8 +21,19 @@
                 <a class="navbar-item" data-nav="profile">Profile</a>
             </div>
             
-            <div class="profile-avatar" id="profileAvatar">{{ request.user.full_name|slice:":1"|upper }}</div>
-            <button class="logout-btn" onclick="logoutUser()">Logout</button>
+             {% if user.profile_picture %}
+    <img src="{{ user.profile_picture.url }}" alt="Profile Picture">
+{% else %}
+    <div class="profile-avatar">
+        {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
+    </div>
+{% endif %}
+
+            {% if request.user.is_authenticated %}
+        <button class="logout-btn" onclick="logoutUser()">Logout</button>
+        {% else %}
+        <a class="login-btn" href="{% url 'login' %}">Login</a>
+        {% endif %}
         </div>
 
         <div id="particles"></div>
@@ -66,7 +77,11 @@
                     <div class="network-card">
                         <div class="stock-status stock-in">IN STOCK</div>
                         <div class="network-header">
-                            <div class="network-logo">{{ telco_name|slice:":3"|upper }}</div>
+                            {% if  telco_name == "AirtelTigo" %}
+                            <div class="network-logo {{ telco_name|lower }}">{{ telco_name|slice:":1" }}{{ telco_name|slice:"6:7" }}</div>
+                            {% else %}
+                            <div class="network-logo {{ telco_name|lower }}">{{ telco_name|slice:":3"|upper }}</div>
+                            {% endif %}
                             <div class="network-name">{{ telco_name }}</div>
                         </div>
                         <div class="stats-grid">
@@ -209,20 +224,21 @@
                 • No refunds for wrong numbers or duplicate orders
             </div>
             
-            <div class="data-plans" id="dataPlans">
-                {% for telco_name, plans in data_plans.items %}
-                    <div class="plans-group" data-telco="{{ telco_name }}">
-                        <h3>{{ telco_name }} Bundles</h3>
-                        {% for plan in plans %}
-                            <div class="plan-item" data-id="{{ plan.id }}" data-price="{{ plan.price }}">
-                                <span class="plan-size">{{ plan.size }}</span>
-                                <span class="plan-validity">{{ plan.validity }}</span>
-                                <span class="plan-price">GH₵ {{ plan.price }}</span>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% endfor %}
-            </div>
+            <!-- HTML Template (Django) -->
+                <div class="data-plans" id="dataPlans">
+                    {% for telco_name, plans in data_plans.items %}
+                        <div class="plans-group" data-telco="{{ telco_name }}">
+                            <h3>{{ telco_name }} Bundles</h3>
+                            {% for plan in plans %}
+                                <div class="plan-option plan-item" data-id="{{ plan.id }}" data-price="{{ plan.price }}">
+                                    <div class="plan-size">{{ plan.size }}</div>
+                                    <div class="plan-price">GH₵ {{ plan.price }}</div>
+                                    <div class="plan-validity">{{ plan.validity }}</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
             <form method="post" action="." data-payment-url="{% url 'payment_initiate' %}">
                 {% csrf_token %}
             <input type="tel" class="phone-input" id="phoneInput" placeholder="Enter phone number (must start with 0)" maxlength="10">
@@ -239,6 +255,10 @@
             </form>
         </div>
     </div>
+
+<script>
+    
+</script>
 
     <script>
         // Data is now rendered directly in the template, no need for JSON variable
@@ -314,11 +334,11 @@ function setGreeting() {
     
     let greeting;
     if (hour < 12) {
-        greeting = `Good Morning, ${userFullName}! Welcome to DataHub 🌅`;
+        greeting = `Good Morning! Welcome to DataHub 🌅`;
     } else if (hour < 17) {
-        greeting = `Good Afternoon, ${userFullName}! Welcome to DataHub ☀️`;
+        greeting = `Good Afternoon! Welcome to DataHub ☀️`;
     } else {
-        greeting = `Good Evening, ${userFullName}! Welcome to DataHub 🌙`;
+        greeting = `Good Evening! Welcome to DataHub 🌙`;
     }
 
     greetingEl.textContent = greeting;
@@ -816,8 +836,7 @@ document.addEventListener('visibilitychange', function() {
     });
 });
     </script>
-    <script src="{% static 'js/testhome.js' %}"></script>
-    
+    <script >window.userFullName = "{{ request.user.full_name|escapejs }}";</script>
     {% include 'components/messages.html' %}
 </body>
 </html>

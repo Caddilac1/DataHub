@@ -351,7 +351,9 @@
             </div>
             
             <div class="data-plans" id="dataPlans">
-                <!-- Plans will be populated by JavaScript -->
+                <div class="plan-size">{{plan.size}}</div>
+                <div class="plan-price">{{plan.price}}</div>
+                <div class="plan-validity">Valid for {{plan.validity}}</div>
             </div>
 
             <input type="tel" class="phone-input" id="phoneInput" placeholder="Enter phone number (must start with 0)" maxlength="10">
@@ -369,7 +371,7 @@
     </div>
 <script src="{% static 'js/home.js' %}"></script>
 <script>
-    const dataPlans = {{ data_plans_json|safe }};
+    const dataPlans = {{ data_plans|safe }};
     window.userFullName = "{{ request.user.full_name|escapejs }}";
 </script>
     

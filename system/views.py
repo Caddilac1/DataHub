@@ -44,35 +44,27 @@ class HomeView(TemplateView):
                 data_plans[provider_name] = []
 
             data_plans[provider_name].append({
+                'id': bundle.id,
                 'size': size_display,
                 'price': f"GH₵ {bundle.price:.2f}",
                 'validity': validity,
                 'code': bundle.telco.code
             })
 
-        data_plans_json = json.dumps(data_plans)
-
-        return self.render_to_response({
+        context = {
             'data_plans': data_plans,
-            'data_plans_json': data_plans_json,
-            'user': request.user  
-        })
+            'paystack_public_key': settings.TEST_PUBLIC_KEY,
+            'user': request.user
+        }
 
-
+        return render(request, self.template_name, context)
 
 # Create your views here.
 
 
 
 
-"""class HomeView(View):
-    template_name = 'home/home.html'
 
-    def get(self, request):
-        context = {}
-        return render(request, self.template_name, context)
-
-"""
 
 
 class TelcoStockListView(ListView):

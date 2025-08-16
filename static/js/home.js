@@ -184,51 +184,63 @@ function switchToTab(tab) {
     }
 }
 
-// Open modal for purchasing data
+// Open modal for purchasing data - Updated to work with new styling
 function openModal(network) {
-    // Check if network is out of stock
-    if (stockStatuses[network] === 'out-of-stock') {
+    const card = document.querySelector(`.network-card[data-network="${network.toLowerCase()}"]`);
+    if (card && card.classList.contains('out-of-stock')) {
         showMessage('This network is currently out of stock. Please try another network.', 'error');
         return;
     }
+    if (!purchaseModal) return;
 
     selectedNetwork = network;
     document.getElementById('modalTitle').textContent = `Purchase ${network} Data Bundle`;
     
-    // Populate data plans
-    const plansContainer = document.getElementById('dataPlans');
-    plansContainer.innerHTML = '';
+    // Show/hide plans groups based on selected network
+    document.querySelectorAll('.plans-group').forEach(group => {
+        if (group.dataset.telco === network) {
+            group.style.display = 'block';
+        } else {
+            group.style.display = 'none';
+        }
+    });
+
+    // Clear all selections
+    document.querySelectorAll('.plan-item').forEach(p => p.classList.remove('selected'));
     
-    if (dataPlans[network]) {
-        dataPlans[network].forEach((plan, index) => {
-            const planElement = document.createElement('div');
-            planElement.className = 'plan-option';
-            planElement.style.animationDelay = `${index * 0.1}s`;
-            planElement.innerHTML = `
-                <div class="plan-size">${plan.size}</div>
-                <div class="plan-price">${plan.price}</div>
-                <div class="plan-validity">Valid for ${plan.validity}</div>
-            `;
+    // Add event listeners to plan items for the selected network
+    document.querySelectorAll(`.plans-group[data-telco="${network}"] .plan-item`).forEach((planElement, index) => {
+        // Add staggered animation delay
+        planElement.style.animationDelay = `${index * 0.1}s`;
+        
+        planElement.addEventListener('click', function() {
+            // Remove selection from all plans in this network
+            document.querySelectorAll(`.plans-group[data-telco="${network}"] .plan-item`).forEach(p => p.classList.remove('selected'));
             
-            planElement.addEventListener('click', function() {
-                document.querySelectorAll('.plan-option').forEach(p => p.classList.remove('selected'));
-                this.classList.add('selected');
-                selectedPlan = plan;
-                updateSelectedPlan();
-                checkFormValidity();
-                
-                // Add selection feedback
-                this.style.transform = 'scale(1.05)';
-                setTimeout(() => {
-                    this.style.transform = '';
-                }, 200);
-            });
+            // Add selection to clicked plan
+            this.classList.add('selected');
+
+            // Update selected plan data
+            selectedPlan = {
+                id: this.dataset.id,
+                size: this.querySelector('.plan-size').textContent,
+                price: this.querySelector('.plan-price').textContent,
+                validity: this.querySelector('.plan-validity').textContent.replace('Valid for ', '')
+            };
             
-            plansContainer.appendChild(planElement);
+            updateSelectedPlan();
+            checkFormValidity();
+            
+            // Add selection feedback animation
+            this.style.transform = 'scale(1.05)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 200);
         });
-    }
+    });
     
-    document.getElementById('purchaseModal').style.display = 'block';
+    // Show modal
+    purchaseModal.style.display = 'block';
     document.getElementById('phoneInput').value = '';
     document.getElementById('phoneError').style.display = 'none';
     selectedPlan = null;

@@ -861,6 +861,18 @@
             animation: fadeInUp 0.5s ease-out 0.6s both;
         }
 
+        .plans-group {
+            margin-bottom: 30px;
+        }
+
+        .plans-group h3 {
+            color: #2c3e50;
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-left: 5px;
+        }
+
         .plan-option {
             background: linear-gradient(135deg, #f8f9fa, #e9ecef);
             padding: 20px;
@@ -870,6 +882,7 @@
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: relative;
             overflow: hidden;
+            margin-bottom: 12px;
         }
 
         .plan-option::before {
@@ -905,6 +918,17 @@
             100% { transform: scale(1.02) translateY(-3px); }
         }
 
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .plan-size {
             font-weight: bold;
             color: #2c3e50;
@@ -923,6 +947,7 @@
             font-size: 0.95rem;
             margin-top: 5px;
         }
+
 
         .phone-input {
             width: 100%;

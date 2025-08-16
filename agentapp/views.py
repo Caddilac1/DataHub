@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 class AgentHomeView(TemplateView):
-    template_name = 'home/home.html'
+    template_name = 'agents/home/home.html'
 
     def get(self, request, *args, **kwargs):
         bundles = Bundle.objects.select_related('telco').filter(is_agent_bundle=True).order_by('telco__name', 'size_mb')

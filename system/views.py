@@ -33,7 +33,7 @@ class HomeView(TemplateView):
     template_name = 'home/home.html'
 
     def get(self, request, *args, **kwargs):
-        bundles = Bundle.objects.select_related('telco').all().order_by('telco__name', 'size_mb')
+        bundles = Bundle.objects.select_related('telco').filter(is_agent_bundle=False).order_by('telco__name', 'size_mb')
         data_plans = {}
 
         for bundle in bundles:

@@ -441,13 +441,13 @@ class TelcoAdmin(admin.ModelAdmin):
 @admin.register(Bundle)
 class BundleAdmin(admin.ModelAdmin):
     list_display = (
-        'telco', 'name', 'is_instock', 'is_limited', 'size_mb', 'price', 'stock_status_badge',
+        'telco', 'name', 'is_instock', 'is_limited','is_agent_bundle', 'size_mb', 'price', 'stock_status_badge',
         'is_active_badge', 'order_count', 'created_at'
     )
-    list_filter = ('telco', 'name', 'is_instock', 'is_active', RecentActivityFilter)
+    list_filter = ('telco', 'name', 'is_instock','is_agent_bundle', 'is_active', RecentActivityFilter)
     search_fields = ('telco__name', 'name')
     readonly_fields = ('id', 'created_at', 'updated_at')
-    list_editable = ('price', 'is_instock', 'is_limited')
+    list_editable = ('price', 'is_instock', 'is_limited','is_agent_bundle')
     actions = ['mark_in_stock', 'mark_out_of_stock', 'activate_bundles', 'deactivate_bundles']
 
     fieldsets = (
@@ -455,7 +455,7 @@ class BundleAdmin(admin.ModelAdmin):
             'fields': ('id', 'telco', 'name', 'size_mb', 'price')
         }),
         ('Stock Management', {
-            'fields': ('is_instock', 'is_out_of_stock', 'is_limited', 'is_active')
+            'fields': ('is_instock', 'is_out_of_stock', 'is_limited','is_agent_bundle', 'is_active')
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
@@ -478,6 +478,13 @@ class BundleAdmin(admin.ModelAdmin):
             return format_html('<span style="color: green;">✓</span>')
         return format_html('<span style="color: red;">✗</span>')
     is_active_badge.short_description = 'Active'
+
+    #agent bundle
+    def is_agent_bundle_badge(self, obj):
+        if obj.is_agent_bundle:
+            return format_html('<span style="color: green;">✓</span>')
+        return format_html('<span style="color: red;">✗</span>')
+    is_agent_bundle_badge.short_description = 'Agent Bundle'
 
     def order_count(self, obj):
         count = obj.databundleorder_set.count()

@@ -33,7 +33,7 @@ class HomeView(TemplateView):
     template_name = 'home/home.html'
 
     def get(self, request, *args, **kwargs):
-        bundles = Bundle.objects.select_related('telco').all().order_by('telco__name', 'size_mb')
+        bundles = Bundle.objects.select_related('telco').filter(is_agent_bundle=False).order_by('telco__name', 'size_mb')
         data_plans = {}
 
         for bundle in bundles:
@@ -110,7 +110,7 @@ class TestHomeView(LoginRequiredMixin, TemplateView):
         """
         context = super().get_context_data(**kwargs)
         
-        bundles = Bundle.objects.select_related('telco').all().order_by('telco__name', 'size_mb')
+        bundles = Bundle.objects.select_related('telco').filter(is_agent_bundle=False).order_by('telco__name', 'size_mb')
         data_plans = {}
 
         orders = DataBundleOrder.objects.filter(user=self.request.user).order_by('-created_at')
@@ -223,6 +223,7 @@ class PaymentView(LoginRequiredMixin, View):
         Handles the GET request from Paystack after a payment attempt.
         This replaces the old `paystack_callback` function.
         """
+        user = request.user
         reference = request.GET.get('reference')
         if not reference:
             return redirect(reverse('test_home') + '?payment_status=failed&message=Invalid payment reference')
@@ -245,8 +246,18 @@ class PaymentView(LoginRequiredMixin, View):
                     
                     # Log successful payment for internal records
                     logger.info(f"Payment successful for order {order.id}. Reference: {reference}")
-                    
-                return redirect(reverse('test_home') + f'?payment_status=success&order_id={order.id}')
+                if user.role == 'customer':
+
+                    messages.success(request, f"Payment successful for order {order.id}. Your data bundle will be processed shortly.")
+                    return redirect(reverse('test_home') + f'?payment_status=success&order_id={order.id}')
+                elif user.role == 'agent':
+                    messages.success(request, f"Payment successful for order {order.id}. The data bundle will be processed shortly.")
+                    return redirect(reverse('agent_home_page') + f'?payment_status=success&order_id={order.id}')
+
+                else:
+                    messages.success(request, f"Payment successful for order {order.id}. The data bundle will be processed shortly.")
+                    return redirect(reverse('test_home') + f'?payment_status=success&order_id={order.id}')   
+                
             else:
                 payment = get_object_or_404(Payment, reference=reference)
                 order = payment.order

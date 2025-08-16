@@ -31,12 +31,29 @@ logger = logging.getLogger(__name__)
 # Create your views here.
 
 
-class AgentHomeView(TemplateView):
+class AgentHomeView(LoginRequiredMixin, TemplateView):
+    """
+    A class-based view to display the home page with bundles categorized by telco,
+    without using JSON for client-side rendering.
+    """
     template_name = 'agents/home/home.html'
 
-    def get(self, request, *args, **kwargs):
+    def get_context_data(self, **kwargs):
+        """
+        Populate the context with a structured dictionary of data plans.
+        """
+        context = super().get_context_data(**kwargs)
+        
         bundles = Bundle.objects.select_related('telco').filter(is_agent_bundle=True).order_by('telco__name', 'size_mb')
         data_plans = {}
+
+        orders = DataBundleOrder.objects.filter(user=self.request.user).order_by('-created_at')
+        paginator = Paginator(orders, 15)  # 15 per page
+        page_number = self.request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        today = timezone.now().date()
+        rec_orders = DataBundleOrder.objects.filter(created_at__date=today).order_by('-created_at')
 
         for bundle in bundles:
             size_display = f"{bundle.size_mb // 1000}GB" if bundle.size_mb >= 1000 else f"{bundle.size_mb}MB"
@@ -49,15 +66,18 @@ class AgentHomeView(TemplateView):
             data_plans[provider_name].append({
                 'id': bundle.id,
                 'size': size_display,
-                'price': f"GH₵ {bundle.price:.2f}",
+                'price': f"{bundle.price:.2f}",  # Keep price as string for display
                 'validity': validity,
                 'code': bundle.telco.code
             })
-
-        context = {
-            'data_plans': data_plans,
-            'paystack_public_key': settings.TEST_PUBLIC_KEY,
-            'user': request.user
-        }
-
-        return render(request, self.template_name, context)
+        
+        context['data_plans'] = data_plans
+        context['paystack_public_key'] = settings.TEST_PUBLIC_KEY  # Use the test public key for client-side integration
+        context['user'] = self.request.user 
+        context['orders'] = orders  # Include user's past orders for display
+        context['rec_orders'] = rec_orders  # Include recent orders for display
+        context['page_obj'] = page_obj  # Pass the paginated orders to the template 
+ # Pass the user object to the template for
+        
+        return context
+    

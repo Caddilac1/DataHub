@@ -110,7 +110,7 @@ class TestHomeView(LoginRequiredMixin, TemplateView):
         """
         context = super().get_context_data(**kwargs)
         
-        bundles = Bundle.objects.select_related('telco').all().order_by('telco__name', 'size_mb')
+        bundles = Bundle.objects.select_related('telco').filter(is_agent_bundle=False).order_by('telco__name', 'size_mb')
         data_plans = {}
 
         orders = DataBundleOrder.objects.filter(user=self.request.user).order_by('-created_at')

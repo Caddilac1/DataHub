@@ -353,6 +353,7 @@ class Bundle(models.Model):
     name = models.CharField(max_length=50, choices=NAME_CHOICES)
     size_mb = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    is_agent_bundle = models.BooleanField(default=False)
     is_instock = models.BooleanField(default=True)
     is_out_of_stock = models.BooleanField(default=False)
     is_limited = models.BooleanField(default=False)

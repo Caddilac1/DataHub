@@ -363,7 +363,7 @@ class Bundle(models.Model):
 
     class Meta:
         ordering = ['telco__name', 'size_mb']
-        unique_together = ('telco', 'size_mb', 'name')
+        unique_together = ('telco', 'size_mb', 'name','is_agent_bundle')
         indexes = [
             models.Index(fields=['telco', 'is_active']),
             models.Index(fields=['is_instock']),

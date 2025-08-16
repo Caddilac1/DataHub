@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.views.generic import ListView
 from django.views.generic import TemplateView
+from django.core.paginator import Paginator
 from authentication.models import *
 from django.shortcuts import render
 from django.views.generic import TemplateView
@@ -112,6 +113,14 @@ class TestHomeView(LoginRequiredMixin, TemplateView):
         bundles = Bundle.objects.select_related('telco').all().order_by('telco__name', 'size_mb')
         data_plans = {}
 
+        orders = DataBundleOrder.objects.filter(user=self.request.user).order_by('-created_at')
+        paginator = Paginator(orders, 15)  # 15 per page
+        page_number = self.request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        today = timezone.now().date()
+        rec_orders = DataBundleOrder.objects.filter(created_at__date=today).order_by('-created_at')
+
         for bundle in bundles:
             size_display = f"{bundle.size_mb // 1000}GB" if bundle.size_mb >= 1000 else f"{bundle.size_mb}MB"
             validity = "Non-Expiry" if bundle.telco.name.lower() in ['mtn', 'telecel'] else "30 days"
@@ -130,7 +139,11 @@ class TestHomeView(LoginRequiredMixin, TemplateView):
         
         context['data_plans'] = data_plans
         context['paystack_public_key'] = settings.TEST_PUBLIC_KEY  # Use the test public key for client-side integration
-        context['user'] = self.request.user  # Pass the user object to the template for
+        context['user'] = self.request.user 
+        context['orders'] = orders  # Include user's past orders for display
+        context['rec_orders'] = rec_orders  # Include recent orders for display
+        context['page_obj'] = page_obj  # Pass the paginated orders to the template 
+ # Pass the user object to the template for
         
         return context
     
@@ -247,4 +260,4 @@ class PaymentView(LoginRequiredMixin, View):
                 
         except Exception as e:
             logger.error(f"Error during payment verification for reference {reference}: {e}", exc_info=True)
-            return redirect(reverse('test_home') + f'?payment_status=error&message={str(e)}')
+            return redirect(reverse('home') + f'?payment_status=error&message={str(e)}')

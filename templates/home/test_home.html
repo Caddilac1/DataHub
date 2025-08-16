@@ -24,7 +24,7 @@
              {% if user.profile_picture %}
     <img src="{{ user.profile_picture.url }}" alt="Profile Picture">
 {% else %}
-    <div class="profile-avatar">
+    <div class="profile-avatar" id="initials">
         {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
     </div>
 {% endif %}
@@ -125,15 +125,21 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for order in recent_orders %}
+                            {% for recent_order in rec_orders %}
                             <tr>
-                                <td>{{ order.id }}</td>
-                                <td>{{ order.telco.name }}</td>
-                                <td>{{ order.phone_number|slice:"0:4" }}******{{ order.phone_number|slice:"8:10" }}</td>
-                                <td>{{ order.bundle.size_mb|divisibleby:1000|yesno:"GB,MB" }}</td>
-                                <td>GH₵ {{ order.payment.amount }}</td>
-                                <td><span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span></td>
-                                <td>{{ order.created_at|date:"Y-m-d H:i" }}</td>
+                                <td>{{ recent_order.id }}</td>
+                                <td>{{ recent_order.telco.name }}</td>
+                                <td>{{ recent_order.phone_number}}</td>
+                                <td>
+                                    {% if recent_order.bundle.size_mb >= 1000 %}
+                                        {% widthratio recent_order.bundle.size_mb 1000 1 %} GB
+                                    {% else %}
+                                        {{ recent_order.bundle.size_mb }} MB
+                                    {% endif %}
+                                </td>
+                                <td>GH₵ {{ recent_order.payment.amount }}</td>
+                                <td><span class="status-badge status-{{ recent_order.status }}">{{ recent_order.get_status_display }}</span></td>
+                                <td>{{ recent_order.created_at|date:"Y-m-d H:i" }}</td>
                             </tr>
                             {% empty %}
                             <tr>
@@ -163,12 +169,18 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for order in order_history %}
+                            {% for order in orders %}
                             <tr>
                                 <td>{{ order.id }}</td>
                                 <td>{{ order.telco.name }}</td>
-                                <td>{{ order.phone_number|slice:"0:4" }}******{{ order.phone_number|slice:"8:10" }}</td>
-                                <td>{{ order.bundle.size_mb|divisibleby:1000|yesno:"GB,MB" }}</td>
+                                <td>{{ order.phone_number}}</td>
+                                <td>
+                                        {% if order.bundle.size_mb >= 1000 %}
+                                            {% widthratio order.bundle.size_mb 1000 1 %} GB
+                                        {% else %}
+                                            {{ order.bundle.size_mb }} MB
+                                        {% endif %}
+                                    </td>
                                 <td>GH₵ {{ order.payment.amount }}</td>
                                 <td><span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span></td>
                                 <td>{{ order.created_at|date:"Y-m-d H:i" }}</td>
@@ -179,6 +191,24 @@
                             </tr>
                             {% endfor %}
                         </tbody>
+                        <div class="pagination">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page=1">First</a>
+            <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">Next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+        {% endif %}
+    </span>
+</div>
+
                     </table>
                 </div>
             </div>
@@ -330,20 +360,31 @@ function setGreeting() {
     const greetingEl = document.getElementById('greeting');
     if (!greetingEl) return;
     
-    const userFullName = greetingEl.dataset.user || "Guest";
+     const userName = "{% if request.user.is_authenticated %}{{ request.user.full_name|escapejs }}{% else %}Guest{% endif %}";
     
     let greeting;
     if (hour < 12) {
-        greeting = `Good Morning! Welcome to DataHub 🌅`;
+        greeting = `Good Morning, ${userName}! Welcome to DataHub 🌅`;
     } else if (hour < 17) {
-        greeting = `Good Afternoon! Welcome to DataHub ☀️`;
+        greeting = `Good Afternoon, ${userName}! Welcome to DataHub ☀️`;
     } else {
-        greeting = `Good Evening! Welcome to DataHub 🌙`;
+        greeting = `Good Evening, ${userName}! Welcome to DataHub 🌙`;
     }
 
     greetingEl.textContent = greeting;
 }
 
+
+const fullName = "{{ request.user.full_name|default:'Guest'|escapejs }}";
+
+    function getInitials(name) {
+        if (!name || name === "Guest") return "G";
+        const parts = name.trim().split(" ");
+        if (parts.length === 1) return parts[0][0].toUpperCase();
+        return parts[0][0].toUpperCase() + parts[parts.length - 1][0].toUpperCase();
+    }
+
+    document.getElementById("initials").textContent = getInitials(fullName);
 // Update stock status dynamically
 function updateStockStatus(network, status) {
     const card = document.querySelector(`.network-card[data-network="${network.toLowerCase()}"]`);
@@ -624,7 +665,7 @@ function processPurchase(event) {
         return;
     }
     
-    purchaseBtn.innerHTML = 'Processing... <span class="loading"></span>';
+    purchaseBtn.innerHTML = 'Redirecting to checkout page... <span class="loading"></span>';
     purchaseBtn.disabled = true;
     
     const formData = new FormData();
@@ -751,7 +792,7 @@ function initCountAnimations() {
 function logoutUser() {
     if (confirm('Are you sure you want to logout?')) {
         const form = document.createElement('form');
-        form.method = 'post';
+        form.method = 'get';
         form.action = '{% url "signout" %}';
         
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
@@ -836,7 +877,7 @@ document.addEventListener('visibilitychange', function() {
     });
 });
     </script>
-    <script >window.userFullName = "{{ request.user.full_name|escapejs }}";</script>
+   
     {% include 'components/messages.html' %}
 </body>
 </html>

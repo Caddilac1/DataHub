@@ -7,8 +7,8 @@ from .views import *
 
 
 urlpatterns = [
-   path('', HomeView.as_view(), name='home'),
-   path('tests/', TestHomeView.as_view(), name='test_home'),
+   #path('', HomeView.as_view(), name='home'),
+   path('', TestHomeView.as_view(), name='home'),
    path('payment/', PaymentView.as_view(), name='payment_initiate'),
    path('payment/callback/', PaymentView.as_view(), name='payment_callback'),
    

@@ -121,6 +121,8 @@ class TestHomeView(LoginRequiredMixin, TemplateView):
         today = timezone.now().date()
         rec_orders = DataBundleOrder.objects.filter(created_at__date=today).order_by('-created_at')
 
+        telcos = Telco.objects.all()
+
         for bundle in bundles:
             size_display = f"{bundle.size_mb // 1000}GB" if bundle.size_mb >= 1000 else f"{bundle.size_mb}MB"
             validity = "Non-Expiry" if bundle.telco.name.lower() in ['mtn', 'telecel'] else "30 days"
@@ -143,6 +145,7 @@ class TestHomeView(LoginRequiredMixin, TemplateView):
         context['orders'] = orders  # Include user's past orders for display
         context['rec_orders'] = rec_orders  # Include recent orders for display
         context['page_obj'] = page_obj  # Pass the paginated orders to the template 
+        context['telcos'] = telcos  # Include telco information for display
  # Pass the user object to the template for
         
         return context

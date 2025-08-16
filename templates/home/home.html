@@ -380,3 +380,57 @@
     
 </body>
 </html>
+
+
+
+function updateStockStatus(status) {
+    document.querySelectorAll('.network-card').forEach(card => {
+        const network = card.dataset.network; // coming from data-network="{{ telco_name|lower }}"
+        console.log("[DEBUG] Found card for network:", network);
+
+        if (!network) {
+            console.error("[ERROR] Network value is missing!");
+            return;
+        }
+
+        const statusBadge = card.querySelector('.stock-status');
+        const buyBtn = card.querySelector('.buy-btn');
+
+        if (!statusBadge || !buyBtn) {
+            console.warn(`[WARN] Missing elements inside card for ${network}`);
+            return;
+        }
+
+        // Reset old classes
+        card.classList.remove('out-of-stock', 'limited-stock');
+        statusBadge.classList.remove('stock-in', 'stock-out', 'stock-limited');
+
+        // Apply new status
+        switch (status) {
+            case 'out-of-stock':
+                console.log(`⚠️ Setting ${network} to OUT OF STOCK`);
+                card.classList.add('out-of-stock');
+                statusBadge.classList.add('stock-out');
+                statusBadge.textContent = 'OUT OF STOCK';
+                buyBtn.disabled = true;
+                buyBtn.textContent = 'Currently Unavailable';
+                break;
+
+            case 'limited':
+                console.log(`⚠️ Setting ${network} to LIMITED`);
+                card.classList.add('limited-stock');
+                statusBadge.classList.add('stock-limited');
+                statusBadge.textContent = 'LIMITED';
+                buyBtn.disabled = false;
+                buyBtn.textContent = 'Buy Data Bundle';
+                break;
+
+            default:
+                console.log(`✅ Setting ${network} to IN STOCK`);
+                statusBadge.classList.add('stock-in');
+                statusBadge.textContent = 'IN STOCK';
+                buyBtn.disabled = false;
+                buyBtn.textContent = 'Buy Data Bundle';
+        }
+    });
+}

@@ -77,3 +77,36 @@ class SocialSignupForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['full_name'].required = True
         self.fields['phone_number'].required = True
+
+
+
+class OTPVerificationForm(forms.Form):
+    """Form for OTP verification"""
+    otp_code = forms.CharField(
+        max_length=6,
+        min_length=6,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control text-center',
+            'placeholder': 'Enter 6-digit code',
+            'maxlength': '6',
+            'pattern': '[0-9]{6}',
+            'autocomplete': 'one-time-code',
+            'inputmode': 'numeric'
+        }),
+        help_text='Enter the 6-digit code sent to your email'
+    )
+    
+    email = forms.EmailField(
+        widget=forms.HiddenInput()  # Hidden field to maintain email context
+    )
+    
+    def clean_otp_code(self):
+        otp_code = self.cleaned_data.get('otp_code')
+        
+        if not otp_code.isdigit():
+            raise forms.ValidationError('OTP must contain only numbers.')
+        
+        if len(otp_code) != 6:
+            raise forms.ValidationError('OTP must be exactly 6 digits.')
+        
+        return otp_code

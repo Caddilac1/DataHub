@@ -121,6 +121,8 @@ class TestHomeView(LoginRequiredMixin, TemplateView):
         today = timezone.now().date()
         rec_orders = DataBundleOrder.objects.filter(created_at__date=today).order_by('-created_at')
 
+        telcos = Telco.objects.all()
+
         for bundle in bundles:
             size_display = f"{bundle.size_mb // 1000}GB" if bundle.size_mb >= 1000 else f"{bundle.size_mb}MB"
             validity = "Non-Expiry" if bundle.telco.name.lower() in ['mtn', 'telecel'] else "30 days"
@@ -143,6 +145,7 @@ class TestHomeView(LoginRequiredMixin, TemplateView):
         context['orders'] = orders  # Include user's past orders for display
         context['rec_orders'] = rec_orders  # Include recent orders for display
         context['page_obj'] = page_obj  # Pass the paginated orders to the template 
+        context['telcos'] = telcos  # Include telco information for display
  # Pass the user object to the template for
         
         return context
@@ -246,14 +249,14 @@ class PaymentView(LoginRequiredMixin, View):
                 if user.role == 'customer':
 
                     messages.success(request, f"Payment successful for order {order.id}. Your data bundle will be processed shortly.")
-                    return redirect(reverse('test_home') + f'?payment_status=success&order_id={order.id}')
+                    return redirect(reverse('home') + f'?payment_status=success&order_id={order.id}')
                 elif user.role == 'agent':
                     messages.success(request, f"Payment successful for order {order.id}. The data bundle will be processed shortly.")
                     return redirect(reverse('agent_home_page') + f'?payment_status=success&order_id={order.id}')
 
                 else:
                     messages.success(request, f"Payment successful for order {order.id}. The data bundle will be processed shortly.")
-                    return redirect(reverse('test_home') + f'?payment_status=success&order_id={order.id}')   
+                    return redirect(reverse('home') + f'?payment_status=success&order_id={order.id}')   
                 
             else:
                 payment = get_object_or_404(Payment, reference=reference)

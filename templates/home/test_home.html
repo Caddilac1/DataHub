@@ -72,41 +72,66 @@
         </div>
 
         <div class="content-section active" id="dashboard">
-            <div class="dashboard">
-                {% for telco_name, plans in data_plans.items %}
-                    <div class="network-card">
-                        <div class="stock-status stock-in">IN STOCK</div>
-                        <div class="network-header">
-                            {% if  telco_name == "AirtelTigo" %}
-                            <div class="network-logo {{ telco_name|lower }}">{{ telco_name|slice:":1" }}{{ telco_name|slice:"6:7" }}</div>
-                            {% else %}
-                            <div class="network-logo {{ telco_name|lower }}">{{ telco_name|slice:":3"|upper }}</div>
-                            {% endif %}
-                            <div class="network-name">{{ telco_name }}</div>
-                        </div>
-                        <div class="stats-grid">
-                            <div class="stat-item">
-                                <div class="stat-number">N/A</div>
-                                <div class="stat-label">Orders Today</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-number">N/A</div>
-                                <div class="stat-label">Success Rate</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-number">N/A</div>
-                                <div class="stat-label">Avg Processing</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-number">24/7</div>
-                                <div class="stat-label">Available</div>
-                            </div>
-                        </div>
-                        <button class="buy-btn" onclick="openModal('{{ telco_name }}')">Buy Data Bundle</button>
+<div class="dashboard">
+    {% for telco_name, plans in data_plans.items %}
+        {% for telco in telcos %}
+            {% if telco.name == telco_name %}
+                <div class="network-card {% if telco.is_active %}in-stock{% else %}out-of-stock{% endif %}" data-network="{{ telco_name|lower }}">
+                    
+                    <div class="stock-status 
+                        {% if telco.is_active %}
+                            stock-in
+                        {% else %}
+                            stock-out
+                        {% endif %}
+                    ">
+                        {% if telco.is_active %}
+                            IN STOCK
+                        {% else %}
+                            OUT OF STOCK
+                        {% endif %}
                     </div>
-                {% endfor %}
-            </div>
-        </div>
+
+                    <div class="network-header">
+                        {% if telco_name == "AirtelTigo" %}
+                            <div class="network-logo {{ telco_name|lower }}">
+                                {{ telco_name|slice:":1" }}{{ telco_name|slice:"6:7" }}
+                            </div>
+                        {% else %}
+                            <div class="network-logo {{ telco_name|lower }}">
+                                {{ telco_name|slice:":3"|upper }}
+                            </div>
+                        {% endif %}
+                        <div class="network-name">{{ telco_name }}</div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-number">N/A</div>
+                            <div class="stat-label">Orders Today</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">N/A</div>
+                            <div class="stat-label">Success Rate</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">N/A</div>
+                            <div class="stat-label">Avg Processing</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">24/7</div>
+                            <div class="stat-label">Available</div>
+                        </div>
+                    </div>
+
+                    <button class="buy-btn" onclick="openModal('{{ telco_name }}')">
+                        Buy Data Bundle
+                    </button>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+</div>
 
         <div class="content-section" id="orders">
             <div class="orders-section">
@@ -303,10 +328,14 @@ const closeBtn = document.querySelector('.modal .close-btn');
 
 // Stock status simulation (remains a JS-based mock for now)
 const stockStatuses = {
-    'MTN': 'in-stock',
-    'AirtelTigo': 'limited',
-    'Telecel': 'out-of-stock'
-};
+        {% for telco in telcos %}
+            "{{ telco.name }}": {
+                status: "{% if telco.is_active %}in-stock{% else %}out-of-stock{% endif %}",
+            }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
+
+    console.log(stockStatuses);
 
 // Create floating particles
 function createParticles() {
@@ -385,40 +414,73 @@ const fullName = "{{ request.user.full_name|default:'Guest'|escapejs }}";
     }
 
     document.getElementById("initials").textContent = getInitials(fullName);
+
+
+
+    document.querySelectorAll('.network-card').forEach(card => {
+    const network = card.dataset.network; // e.g. "mtn"
+    console.log("Found:", network);
+
+    const selector = `.network-card[data-network="${network}"]`;
+    const element = document.querySelector(selector);
+
+    console.log("Selector:", selector, "Element:", element);
+});
+
+
+
 // Update stock status dynamically
-function updateStockStatus(network, status) {
-    const card = document.querySelector(`.network-card[data-network="${network.toLowerCase()}"]`);
-    if (!card) return;
+function updateStockStatus() {
+    document.querySelectorAll('.network-card').forEach(card => {
+        const network = card.dataset.network; 
+        const statusBadge = card.querySelector('.stock-status');
+        const buyBtn = card.querySelector('.buy-btn')
 
-    const statusBadge = card.querySelector('.stock-status');
-    const buyBtn = card.querySelector('.buy-btn');
+        if (!network || !statusBadge) {
+            console.warn(`[WARN] Skipping card, missing info.`);
+            return;
+        }
 
-    card.classList.remove('out-of-stock', 'limited-stock');
-    statusBadge.classList.remove('stock-in', 'stock-out', 'stock-limited');
+        // Normalize the text content for safety
+        const currentStatus = statusBadge.textContent.trim().toLowerCase();
 
-    switch(status) {
-        case 'out-of-stock':
-            card.classList.add('out-of-stock');
-            statusBadge.classList.add('stock-out');
-            statusBadge.textContent = 'OUT OF STOCK';
-            buyBtn.disabled = true;
-            buyBtn.textContent = 'Currently Unavailable';
-            break;
-        case 'limited':
-            card.classList.add('limited-stock');
-            statusBadge.classList.add('stock-limited');
-            statusBadge.textContent = 'LIMITED';
-            buyBtn.disabled = false;
-            buyBtn.textContent = 'Buy Data Bundle';
-            break;
-        default:
-            statusBadge.classList.add('stock-in');
-            statusBadge.textContent = 'IN STOCK';
-            buyBtn.disabled = false;
-            buyBtn.textContent = 'Buy Data Bundle';
-    }
+        switch (currentStatus) {
+            case 'out of stock':
+                console.log(`⚠️ ${network} is OUT OF STOCK`);
+                console.log(`⚠️ Setting ${network} to OUT OF STOCK`);
+                card.classList.add('out-of-stock');
+                statusBadge.classList.add('stock-out');
+                statusBadge.textContent = 'OUT OF STOCK';
+                buyBtn.disabled = true;
+                buyBtn.textContent = 'Currently Unavailable';
+                break;
+
+            case 'limited':
+                console.log(`⚠️ ${network} is LIMITED`);
+                console.log(`⚠️ Setting ${network} to LIMITED`);
+                card.classList.add('limited-stock');
+                statusBadge.classList.add('stock-limited');
+                statusBadge.textContent = 'LIMITED';
+                buyBtn.disabled = false;
+                buyBtn.textContent = 'Buy Data Bundle';
+                break;
+
+            case 'in stock':
+                console.log(`✅ Setting ${network} to IN STOCK`);
+                statusBadge.classList.add('stock-in');
+                statusBadge.textContent = 'IN STOCK';
+                buyBtn.disabled = false;
+                buyBtn.textContent = 'Buy Data Bundle';
+                break;
+
+            default:
+                console.log(`❓ ${network} has UNKNOWN status: ${currentStatus}`);
+        }
+    });
 }
 
+
+createParticles();
 // Tab navigation with enhanced animations
 function initNavigation() {
     document.querySelectorAll('[data-nav]').forEach(navItem => {
@@ -837,6 +899,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initCountAnimations();
     startRealTimeUpdates();
     handlePaymentStatus(); // Moved here to be called on initial page load
+    updateStockStatus();
 
     document.querySelectorAll('.buy-btn').forEach(button => {
         const card = button.closest('.network-card');

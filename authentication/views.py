@@ -96,9 +96,20 @@ class RegisterView(View):
                     user_agent=request.META.get('HTTP_USER_AGENT', '')
                 )
                 
-                # 5. Display success message and redirect
-                messages.success(request, 'Registration successful! An OTP has been sent to your email. Please verify to log in.')
-                return redirect(reverse('confirm_email'))
+                # 5. Store email in session for the confirmation view
+                request.session['registration_email'] = user.email
+                
+                # 6. Display success message and redirect to confirmation view
+                messages.success(
+                    request, 
+                    'Registration successful! An OTP has been sent to your email. Please enter it below to verify your account.'
+                )
+                
+                # Option 1: Redirect with email in URL (more reliable)
+                return redirect(f"{reverse('confirm_email')}?email={user.email}")
+                
+                # Option 2: Simple redirect (relies on session only)
+                # return redirect(reverse('confirm_email'))
 
             except Exception as e:
                 # Log the error for debugging
@@ -106,7 +117,7 @@ class RegisterView(View):
                 messages.error(request, 'An unexpected error occurred during registration. Please try again later.')
                 AuditLog.objects.create(
                     user=None, # User creation failed
-                    action='user_created_failed', # Assuming you add this to your choices
+                    action='user_created_failed', # Make sure to add this to your AuditLog.ACTION_CHOICES
                     details={'message': f'Registration failed due to an error: {str(e)}'},
                     ip_address=request.META.get('REMOTE_ADDR'),
                     user_agent=request.META.get('HTTP_USER_AGENT', '')

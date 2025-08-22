@@ -487,11 +487,16 @@ class AuditLog(models.Model):
     
     ACTION_CHOICES = [
         ('user_created', 'User Created'),
+        ('user_created_failed', 'User Creation Failed'),  # Add this line
         ('user_login', 'User Login'),
         ('user_logout', 'User Logout'),
         ('email_verified', 'Email Verified'),
+        ('email_verification_error', 'Email Verification Error'),  # Add this line
         ('otp_generated', 'OTP Generated'),
         ('otp_verified', 'OTP Verified'),
+        ('otp_verification_failed', 'OTP Verification Failed'),  # Add this line
+        ('otp_resent', 'OTP Resent'),  # Add this line
+        ('otp_resend_failed', 'OTP Resend Failed'),  # Add this line
         ('account_locked', 'Account Locked'),
         ('account_unlocked', 'Account Unlocked'),
         ('order_created', 'Order Created'),

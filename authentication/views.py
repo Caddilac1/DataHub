@@ -50,7 +50,7 @@ from django.template.loader import render_to_string
 from django.conf import settings
 from django.utils.html import strip_tags
 from .models import CustomUser, OTP, AuditLog # Assuming you have these models
-from .forms import EmailForm, OTPForm # Assuming you have these forms
+from .forms import EmailForm, OTPForm, OTPVerificationForm # Assuming you have these forms
 
 
 class RegisterView(View):
@@ -64,7 +64,7 @@ class RegisterView(View):
             try:
                 # 1. Create the user
                 user = form.save(commit=False)
-                user.is_active = False # Deactivate until email is verified
+                user.account_status = "pending_verification" # Deactivate until email is verified
                 user.save()
 
                 # 2. Generate and save OTP
@@ -78,7 +78,7 @@ class RegisterView(View):
                 # 3. Send OTP to user's email
                 subject = 'DataHub - Confirm Your Email'
                 html_message = render_to_string(
-                    'emails/otp_email.html', 
+                    'authentication/emails/register_otp.html', 
                     {'user': user, 'otp_code': otp_code}
                 )
                 plain_message = strip_tags(html_message)
@@ -96,9 +96,20 @@ class RegisterView(View):
                     user_agent=request.META.get('HTTP_USER_AGENT', '')
                 )
                 
-                # 5. Display success message and redirect
-                messages.success(request, 'Registration successful! An OTP has been sent to your email. Please verify to log in.')
-                return redirect(reverse('login'))
+                # 5. Store email in session for the confirmation view
+                request.session['registration_email'] = user.email
+                
+                # 6. Display success message and redirect to confirmation view
+                messages.success(
+                    request, 
+                    'Registration successful! An OTP has been sent to your email. Please enter it below to verify your account.'
+                )
+                
+                # Option 1: Redirect with email in URL (more reliable)
+                return redirect(f"{reverse('confirm_email')}?email={user.email}")
+                
+                # Option 2: Simple redirect (relies on session only)
+                # return redirect(reverse('confirm_email'))
 
             except Exception as e:
                 # Log the error for debugging
@@ -106,7 +117,7 @@ class RegisterView(View):
                 messages.error(request, 'An unexpected error occurred during registration. Please try again later.')
                 AuditLog.objects.create(
                     user=None, # User creation failed
-                    action='user_created_failed', # Assuming you add this to your choices
+                    action='user_created_failed', # Make sure to add this to your AuditLog.ACTION_CHOICES
                     details={'message': f'Registration failed due to an error: {str(e)}'},
                     ip_address=request.META.get('REMOTE_ADDR'),
                     user_agent=request.META.get('HTTP_USER_AGENT', '')
@@ -116,6 +127,249 @@ class RegisterView(View):
         return render(request, 'authentication/registration/register.html', {'form': form})
 
 
+class CustomConfirmEmailView(View):
+    """
+    Handle email confirmation via OTP verification
+    """
+    template_name = 'authentication/registration/confirm_email.html'
+    
+    def get(self, request):
+        """Display the OTP verification form"""
+        # Get email from session or query params
+        email = request.session.get('registration_email') or request.GET.get('email')
+        
+        if not email:
+            messages.error(request, 'Invalid access. Please register again.')
+            return redirect('register')
+        
+        # Check if user exists and needs verification
+        user = CustomUser.get_by_email(email)
+        if not user:
+            messages.error(request, 'User not found. Please register again.')
+            return redirect('register')
+        
+        if user.email_verified:
+            messages.info(request, 'Your email is already verified. You can log in.')
+            return redirect('login')
+        
+        form = OTPVerificationForm()
+        context = {
+            'form': form,
+            'email': email,
+            'user': user
+        }
+        
+        return render(request, self.template_name, context)
+    
+    def post(self, request):
+        """Process OTP verification"""
+        email = request.session.get('registration_email') or request.POST.get('email')
+        
+        if not email:
+            messages.error(request, 'Invalid access. Please register again.')
+            return redirect('register')
+        
+        # Get the user
+        user = CustomUser.get_by_email(email)
+        if not user:
+            messages.error(request, 'User not found. Please register again.')
+            return redirect('register')
+        
+        if user.email_verified:
+            messages.info(request, 'Your email is already verified. You can log in.')
+            return redirect('login')
+        
+        form = OTPVerificationForm(request.POST)
+        
+        if form.is_valid():
+            otp_code = form.cleaned_data['otp_code']
+            
+            try:
+                # Get the most recent active OTP for email verification
+                otp_instance = OTP.objects.filter(
+                    user=user,
+                    otp_type='email_verification',
+                    status='active'
+                ).order_by('-created_at').first()
+                
+                if not otp_instance:
+                    messages.error(request, 'No valid OTP found. Please request a new verification email.')
+                    return self._render_form_with_resend_option(request, form, email, user)
+                
+                # Verify the OTP
+                if otp_instance.verify_code(otp_code):
+                    # OTP is valid, verify the user's email
+                    with transaction.atomic():
+                        user.verify_email()  # This method updates email_verified, account_status, etc.
+                        
+                        # Create audit log
+                        AuditLog.objects.create(
+                            user=user,
+                            action='email_verified',
+                            details={
+                                'message': 'Email successfully verified via OTP',
+                                'otp_id': otp_instance.id
+                            },
+                            ip_address=request.META.get('REMOTE_ADDR'),
+                            user_agent=request.META.get('HTTP_USER_AGENT', '')
+                        )
+                    
+                    # Clear the email from session
+                    if 'registration_email' in request.session:
+                        del request.session['registration_email']
+                    
+                    messages.success(
+                        request, 
+                        'Email verified successfully! Your account is now active. You can log in.'
+                    )
+                    return redirect('login')
+                
+                else:
+                    # OTP verification failed
+                    remaining_attempts = otp_instance.max_attempts - otp_instance.attempts
+                    
+                    if remaining_attempts > 0:
+                        messages.error(
+                            request, 
+                            f'Invalid OTP. You have {remaining_attempts} attempt(s) remaining.'
+                        )
+                    else:
+                        messages.error(
+                            request, 
+                            'Invalid OTP. Maximum attempts exceeded. Please request a new verification email.'
+                        )
+                        return self._render_form_with_resend_option(request, form, email, user)
+                    
+                    # Create audit log for failed verification
+                    AuditLog.objects.create(
+                        user=user,
+                        action='otp_verification_failed',
+                        details={
+                            'message': 'Failed OTP verification attempt',
+                            'otp_id': otp_instance.id,
+                            'attempts_used': otp_instance.attempts
+                        },
+                        ip_address=request.META.get('REMOTE_ADDR'),
+                        user_agent=request.META.get('HTTP_USER_AGENT', '')
+                    )
+            
+            except Exception as e:
+                messages.error(request, 'An error occurred during verification. Please try again.')
+                
+                # Log the error
+                AuditLog.objects.create(
+                    user=user,
+                    action='email_verification_error',
+                    details={
+                        'message': f'Email verification error: {str(e)}',
+                        'error_type': type(e).__name__
+                    },
+                    ip_address=request.META.get('REMOTE_ADDR'),
+                    user_agent=request.META.get('HTTP_USER_AGENT', '')
+                )
+        
+        # If we get here, form validation failed or OTP verification failed
+        context = {
+            'form': form,
+            'email': email,
+            'user': user
+        }
+        return render(request, self.template_name, context)
+    
+    def _render_form_with_resend_option(self, request, form, email, user):
+        """Helper method to render form with resend option"""
+        context = {
+            'form': form,
+            'email': email,
+            'user': user,
+            'show_resend': True
+        }
+        return render(request, self.template_name, context)
+
+
+class ResendVerificationOTPView(View):
+    """
+    Handle resending verification OTP
+    """
+    
+    def post(self, request):
+        """Resend OTP for email verification"""
+        email = request.POST.get('email')
+        
+        if not email:
+            messages.error(request, 'Email address is required.')
+            return redirect('register')
+        
+        user = CustomUser.get_by_email(email)
+        if not user:
+            messages.error(request, 'User not found.')
+            return redirect('register')
+        
+        if user.email_verified:
+            messages.info(request, 'Your email is already verified.')
+            return redirect('login')
+        
+        try:
+            # Generate new OTP
+            otp_instance, otp_code = OTP.generate_otp(
+                user=user,
+                otp_type='email_verification',
+                ip_address=request.META.get('REMOTE_ADDR'),
+                user_agent=request.META.get('HTTP_USER_AGENT', '')
+            )
+            
+            # Send email (you'll need to import the necessary modules)
+            from django.core.mail import send_mail
+            from django.template.loader import render_to_string
+            from django.utils.html import strip_tags
+            from django.conf import settings
+            
+            subject = 'DataHub - Confirm Your Email (Resent)'
+            html_message = render_to_string(
+                'authentication/emails/register_otp.html',
+                {'user': user, 'otp_code': otp_code}
+            )
+            plain_message = strip_tags(html_message)
+            from_email = settings.DEFAULT_FROM_EMAIL
+            
+            send_mail(
+                subject, 
+                plain_message, 
+                from_email, 
+                [user.email], 
+                html_message=html_message
+            )
+            
+            # Create audit log
+            AuditLog.objects.create(
+                user=user,
+                action='otp_resent',
+                details={
+                    'message': 'Verification OTP resent to user email',
+                    'otp_id': otp_instance.id
+                },
+                ip_address=request.META.get('REMOTE_ADDR'),
+                user_agent=request.META.get('HTTP_USER_AGENT', '')
+            )
+            
+            messages.success(request, 'A new verification code has been sent to your email.')
+            
+        except Exception as e:
+            messages.error(request, 'Failed to resend verification code. Please try again later.')
+            
+            # Log the error
+            AuditLog.objects.create(
+                user=user,
+                action='otp_resend_failed',
+                details={
+                    'message': f'Failed to resend OTP: {str(e)}',
+                    'error_type': type(e).__name__
+                },
+                ip_address=request.META.get('REMOTE_ADDR'),
+                user_agent=request.META.get('HTTP_USER_AGENT', '')
+            )
+        
+        return redirect(f"{reverse('confirm_email')}?email={email}")
 
 
 class CustomLogoutView(View):

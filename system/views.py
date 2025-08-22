@@ -283,14 +283,14 @@ class PaymentView(LoginRequiredMixin, View):
                 if user.role == 'customer':
 
                     messages.success(request, f"Payment successful for order {order.id}. Your data bundle will be processed shortly.")
-                    return redirect(reverse('test_home') + f'?payment_status=success&order_id={order.id}')
+                    return redirect(reverse('home') + f'?payment_status=success&order_id={order.id}')
                 elif user.role == 'agent':
                     messages.success(request, f"Payment successful for order {order.id}. The data bundle will be processed shortly.")
                     return redirect(reverse('agent_home_page') + f'?payment_status=success&order_id={order.id}')
 
                 else:
                     messages.success(request, f"Payment successful for order {order.id}. The data bundle will be processed shortly.")
-                    return redirect(reverse('test_home') + f'?payment_status=success&order_id={order.id}')   
+                    return redirect(reverse('home') + f'?payment_status=success&order_id={order.id}')   
                 
             else:
                 payment = get_object_or_404(Payment, reference=reference)

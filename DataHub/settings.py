@@ -22,7 +22,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env()
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
-SECRET_KEY = env("SECRET_KEY")
+
+SECRET_KEY = os.environ.get("SECRET_KEY")
 
 
 # Quick-start development settings - unsuitable for production
@@ -31,11 +32,10 @@ SECRET_KEY = env("SECRET_KEY")
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
-
-SITE_ID = int(os.environ.get("SITE_ID"))
+ALLOWED_HOSTS = ['localhost', '127.0.0.1','datamart.up.railway.app','datahub.up.railway.app']
+SITE_ID = 1
 
 
 # Application definition
@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'authentication',
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -102,12 +103,25 @@ SOCIALACCOUNT_FORMS = {
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if DEBUG:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('NAME'),
+            'USER': os.environ.get('USER'),
+            'PASSWORD': os.environ.get('PASSWORD'),
+            'HOST': os.environ.get('HOST'),
+            'PORT': os.environ.get('PORT'),
+        }
+    }
+
 
 AUTH_USER_MODEL = 'authentication.CustomUser'
 
@@ -155,18 +169,51 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
-]
+STATIC_URL = "static/"
+STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+MEDIA_ROOT = os.path.join(BASE_DIR, "static/media")
+MEDIA_URL = "media/" 
 
 
+if not DEBUG:
+    # DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    # STATICFILES_STORAGE = 'storages.backends.s3boto3.S3StaticStorage'
+    AWS_QUERYSTRING_AUTH = False
+    AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+    AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = None
+    
+    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+
+    # Static and Media Files Configuration
+    STORAGES = {
+        'staticfiles': {
+            'BACKEND': 'storages.backends.s3boto3.S3StaticStorage',
+        },
+        'default': {
+            'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage',
+        },
+    }
+     # Static and Media URLs
+    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
+    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+
+     # S3 Object Parameters (optional, for caching)
+    AWS_S3_OBJECT_PARAMETERS = {
+        'CacheControl': 'max-age=86400',  # Cache static files for 1 day
+    }
+
+
+LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/login/'
 #LOGOUT_REDIRECT_URL = '/'
 SOCIALACCOUNT_LOGIN_ON_GET = True
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR,"media")
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -215,17 +262,19 @@ LOGGING = {
 
 
 if DEBUG:
-    # Development settings
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    # Your Gmail SMTP settings here
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'smtp.gmail.com'  
+    EMAIL_PORT = 587             
+    EMAIL_USE_TLS = True         
+    EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")  
+    EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
+    DEFAULT_FROM_EMAIL = 'DataHub <datahubone@gmail.com>'
 
 #EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'  
-EMAIL_PORT = 587             
-EMAIL_USE_TLS = True         
-EMAIL_HOST_USER = 'datahubone@gmail.com'  
-EMAIL_HOST_PASSWORD = 'aupucldzzxoauayv' 
-DEFAULT_FROM_EMAIL = 'DataHub <datahubone@gmail.com>'
+
 
 # Additional security measures
 # You can use environment variables to keep sensitive information secure.
@@ -235,10 +284,10 @@ DEFAULT_FROM_EMAIL = 'DataHub <datahubone@gmail.com>'
 # EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 #relax
 
-TEST_SECRET_KEY = env("TEST_SECRET_KEY")
-TEST_PUBLIC_KEY = env("TEST_PUBLIC_KEY")    
+TEST_SECRET_KEY = os.environ.get("TEST_SECRET_KEY")
+TEST_PUBLIC_KEY = os.environ.get("TEST_PUBLIC_KEY")    
 # settings.py
-DATAMART_API_KEY = env("DATAMART_API_KEY")
+DATAMART_API_KEY = os.environ.get("DATAMART_API_KEY")
 
 
 # settings.py
@@ -252,4 +301,11 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
+
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://datamart.up.railway.app',
+    'https://datahub.up.railway.app/'
+
+]
 

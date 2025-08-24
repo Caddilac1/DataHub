@@ -511,7 +511,12 @@ class CustomLoginView(View):
                         # Clear session data after successful login
                         del request.session['otp_sent_to_email']
                         messages.success(request, f"Welcome back, {user.full_name}!")
-                        return redirect('home')
+                        if user.role == 'agent':
+                            return redirect('agent_home_page')
+                        elif user.role == 'customer':
+                            return redirect('home')
+                        elif user.role == 'admin':
+                            return redirect('admin:index')
 
                     else:
                         messages.error(request, 'Invalid or expired OTP. Please try again.')

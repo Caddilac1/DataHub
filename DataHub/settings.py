@@ -35,7 +35,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1','datamart.up.railway.app']
-SITE_ID = int(os.environ.get("SITE_ID"))
+SITE_ID = 1
 
 
 # Application definition

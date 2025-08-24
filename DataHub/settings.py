@@ -301,6 +301,7 @@ CELERY_TIMEZONE = 'UTC'
 
 CSRF_TRUSTED_ORIGINS = [
     'https://datamart.up.railway.app',
+    'https://datahub.up.railway.app/'
 
 ]
 

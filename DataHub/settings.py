@@ -279,10 +279,10 @@ DEFAULT_FROM_EMAIL = 'DataHub <datahubone@gmail.com>'
 # EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 #relax
 
-TEST_SECRET_KEY = env("TEST_SECRET_KEY")
-TEST_PUBLIC_KEY = env("TEST_PUBLIC_KEY")    
+TEST_SECRET_KEY = os.environ.get("TEST_SECRET_KEY")
+TEST_PUBLIC_KEY = os.environ.get("TEST_PUBLIC_KEY")    
 # settings.py
-DATAMART_API_KEY = env("DATAMART_API_KEY")
+DATAMART_API_KEY = os.environ.get("DATAMART_API_KEY")
 
 
 # settings.py

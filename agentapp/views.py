@@ -27,10 +27,16 @@ from system.services import initialize_paystack_payment, verify_paystack_payment
 import logging
 from django.conf import settings
 logger = logging.getLogger(__name__)
+from django.utils.decorators import method_decorator
+from packages.decorators import agent_required
+from django.utils import timezone
+from packages.decorators import closing_time
+from packages.decorators import admin_required
+from django.contrib.auth.decorators import login_required
 
 # Create your views here.
 
-
+@method_decorator(agent_required, name='dispatch')
 class AgentHomeView(LoginRequiredMixin, TemplateView):
     """
     A class-based view to display the home page with bundles categorized by telco,

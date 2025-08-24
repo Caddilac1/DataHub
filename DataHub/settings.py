@@ -35,7 +35,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 DEBUG = False
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1','datamart.up.railway.app']
-#SITE_ID = 1
+SITE_ID = 1
 
 
 # Application definition
@@ -52,8 +52,8 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'allauth',
     'allauth.account',
-    #'allauth.socialaccount',
-    #'allauth.socialaccount.providers.google',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
     'authentication',
     'storages',
 ]

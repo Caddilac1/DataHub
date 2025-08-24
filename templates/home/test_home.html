@@ -216,23 +216,7 @@
                             </tr>
                             {% endfor %}
                         </tbody>
-                        <div class="pagination">
-    <span class="step-links">
-        {% if page_obj.has_previous %}
-            <a href="?page=1">First</a>
-            <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
-        {% endif %}
 
-        <span class="current">
-            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-        </span>
-
-        {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}">Next</a>
-            <a href="?page={{ page_obj.paginator.num_pages }}">Last</a>
-        {% endif %}
-    </span>
-</div>
 
                     </table>
                 </div>
@@ -311,9 +295,7 @@
         </div>
     </div>
 
-<script>
-    
-</script>
+
 
     <script>
         // Data is now rendered directly in the template, no need for JSON variable
@@ -419,7 +401,7 @@ const fullName = "{{ request.user.full_name|default:'Guest'|escapejs }}";
 
     document.querySelectorAll('.network-card').forEach(card => {
     const network = card.dataset.network; // e.g. "mtn"
-    console.log("Found:", network);
+ 
 
     const selector = `.network-card[data-network="${network}"]`;
     const element = document.querySelector(selector);
@@ -446,8 +428,6 @@ function updateStockStatus() {
 
         switch (currentStatus) {
             case 'out of stock':
-                console.log(`⚠️ ${network} is OUT OF STOCK`);
-                console.log(`⚠️ Setting ${network} to OUT OF STOCK`);
                 card.classList.add('out-of-stock');
                 statusBadge.classList.add('stock-out');
                 statusBadge.textContent = 'OUT OF STOCK';
@@ -456,8 +436,6 @@ function updateStockStatus() {
                 break;
 
             case 'limited':
-                console.log(`⚠️ ${network} is LIMITED`);
-                console.log(`⚠️ Setting ${network} to LIMITED`);
                 card.classList.add('limited-stock');
                 statusBadge.classList.add('stock-limited');
                 statusBadge.textContent = 'LIMITED';
@@ -466,7 +444,6 @@ function updateStockStatus() {
                 break;
 
             case 'in stock':
-                console.log(`✅ Setting ${network} to IN STOCK`);
                 statusBadge.classList.add('stock-in');
                 statusBadge.textContent = 'IN STOCK';
                 buyBtn.disabled = false;
@@ -480,44 +457,64 @@ function updateStockStatus() {
 }
 
 
-createParticles();
 // Tab navigation with enhanced animations
 function initNavigation() {
-    document.querySelectorAll('[data-nav]').forEach(navItem => {
+    const navItems = document.querySelectorAll('[data-nav]');
+    console.log('🔍 DEBUG: Found nav items:', navItems.length);
+    
+    navItems.forEach((navItem, index) => {
+        const tabId = navItem.getAttribute('data-nav');
+        console.log(`🔍 DEBUG: Attaching listener ${index + 1} to:`, tabId);
+        
         navItem.addEventListener('click', function(e) {
             e.preventDefault();
-            const tabId = this.dataset.nav;
-            switchToTab(tabId);
+            console.log('🔍 DEBUG: Navigation clicked:', tabId);
             
-            document.querySelectorAll('[data-nav]').forEach(item => item.classList.remove('active'));
+            // Update nav items
+            navItems.forEach(item => item.classList.remove('active'));
             this.classList.add('active');
+            
+            // Switch tabs
+            switchToTab(tabId);
         });
     });
 }
 
-// Switch to tab function
 function switchToTab(tab) {
-    document.querySelectorAll('.content-section').forEach(section => {
-        section.style.opacity = '0';
-        section.style.transform = 'translateY(20px)';
-        setTimeout(() => {
-            section.classList.remove('active');
-        }, 200);
+    console.log('🔍 DEBUG: Switching to tab:', tab);
+    
+    // Hide all sections
+    const allSections = document.querySelectorAll('.content-section');
+    console.log('🔍 DEBUG: Found sections:', allSections.length);
+    
+    allSections.forEach(section => {
+        section.classList.remove('active');
+        console.log('🔍 DEBUG: Removed active from:', section.id);
     });
     
+    // Show target section
+    const targetSection = document.getElementById(tab);
+    if (targetSection) {
+        targetSection.classList.add('active');
+        console.log('🔍 DEBUG: Added active to:', tab);
+        console.log('🔍 DEBUG: Target section classes:', targetSection.className);
+    } else {
+        console.error('❌ ERROR: Target section not found:', tab);
+    }
+    
+    // Update nav items
+    document.querySelectorAll('[data-nav]').forEach(item => {
+        item.classList.remove('active');
+        if (item.dataset.nav === tab) {
+            item.classList.add('active');
+        }
+    });
+    
+    // Hide notices when not on dashboard
     if (tab !== 'dashboard') {
         document.body.classList.add('hidden-notices');
     } else {
         document.body.classList.remove('hidden-notices');
-    }
-    
-    const targetSection = document.getElementById(tab);
-    if (targetSection) {
-        setTimeout(() => {
-            targetSection.classList.add('active');
-            targetSection.style.opacity = '1';
-            targetSection.style.transform = 'translateY(0)';
-        }, 300);
     }
 }
 

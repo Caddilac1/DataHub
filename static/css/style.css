@@ -365,16 +365,25 @@
             border-color: rgba(255, 255, 255, 0.5);
         }
 
-        /* Content Sections */
+        /* Content Sections - Fixed Version */
         .content-section {
-            display: none;
-            animation: fadeInUp 0.6s ease-out;
+            display: block; /* Always keep in layout */
+            opacity: 0; /* Hidden by default */
+            transform: translateY(20px); /* Slightly offset */
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            position: absolute; /* Remove from flow */
+            width: 100%; /* Full width */
+            visibility: hidden; /* Prevent interaction when hidden */
+            pointer-events: none; /* Prevent clicks when hidden */
         }
 
         .content-section.active {
-            display: block;
+            opacity: 1; /* Visible */
+            transform: translateY(0); /* Reset position */
+            position: relative; /* Back in normal flow */
+            visibility: visible; /* Allow interaction */
+            pointer-events: auto; /* Allow clicks */
         }
-
         /* Dashboard Grid with Staggered Animation */
         .dashboard {
             display: grid;

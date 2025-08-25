@@ -544,7 +544,7 @@ class CustomLoginView(View):
                         elif user.role == 'customer':
                             return redirect('home')
                         elif user.role == 'admin':
-                            return redirect('admin:index')
+                            return redirect('admin_home_page')
 
                     else:
                         messages.error(request, 'Invalid or expired OTP. Please try again.')

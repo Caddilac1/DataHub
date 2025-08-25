@@ -2,6 +2,8 @@
 
 from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ValidationError
+from allauth.account.forms import SignupForm
+
 from .models import CustomUser
 from .models import *
 
@@ -68,32 +70,34 @@ class OTPForm(forms.Form):
         widget=forms.TextInput(attrs={'placeholder': 'Enter 6-digit OTP', 'class': 'form-input', 'id': 'id_password'}),
     )
 
-class SocialSignupForm(forms.ModelForm):
+class SocialSignupForm(SignupForm):
     class Meta:
         model = CustomUser
-        fields = ['full_name', 'phone_number']
+        fields = ['phone_number']  # only ask for phone number
 
     def __init__(self, *args, **kwargs):
-        # 🚑 Fix: Allauth sends "sociallogin" here
-        self.sociallogin = kwargs.pop('sociallogin', None)
+        self.sociallogin = kwargs.get("sociallogin")  # allauth passes this
         super().__init__(*args, **kwargs)
 
-        self.fields['full_name'].required = True
         self.fields['phone_number'].required = True
 
-    def save(self, commit=True):
-        user = super().save(commit=False)
+    def save(self, request):
+        # allauth expects save(request), not save(commit=True)
+        user = super().save(request)
 
-        # Optionally use Google profile info
-        if self.sociallogin:
-            extra_data = self.sociallogin.account.extra_data
-            if not user.full_name:
-                user.full_name = extra_data.get("name", "")
-            if not user.email:
-                user.email = extra_data.get("email", "")
+        # Get Google data
+        extra_data = self.sociallogin.account.extra_data
+        given_name = extra_data.get("given_name", "")
+        family_name = extra_data.get("family_name", "")
 
-        if commit:
-            user.save()
+        # Auto populate full_name
+        if not user.full_name:
+            user.full_name = f"{given_name} {family_name}".strip()
+
+        # Save phone number
+        user.phone_number = self.cleaned_data.get("phone_number")
+
+        user.save()
         return user
 
 

@@ -51,6 +51,14 @@ from django.conf import settings
 from django.utils.html import strip_tags
 from .models import CustomUser, OTP, AuditLog # Assuming you have these models
 from .forms import EmailForm, OTPForm, OTPVerificationForm # Assuming you have these forms
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
+from django.shortcuts import render
+from django.views import View
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models.functions import TruncMonth
+from django.db.models import Count, Sum
+from .models import DataBundleOrder, Payment
 
 
 class RegisterView(View):
@@ -536,3 +544,36 @@ class CustomLoginView(View):
 
         # If any form is invalid or an error occurs, re-render the page with forms
         return redirect(reverse('login'))
+    
+
+
+class UserProfileView(LoginRequiredMixin, View):
+    def get(self, request):
+        user = request.user
+
+        # Fetch user's orders and payments
+        user_orders = DataBundleOrder.objects.filter(user=user).order_by('-created_at')
+        user_payments = Payment.objects.filter(order__user=user).order_by('-created_at')
+
+        # 2. Perform monthly order analysis
+        monthly_orders = user_orders.annotate(
+            month=TruncMonth('created_at')
+        ).values('month').annotate(
+            count=Count('id'),
+            total_price=Sum('bundle__price')
+        ).order_by('month')
+
+        # 3. Determine user's role and account status
+        user_role = user.get_role_display()
+        account_status = user.get_account_status_display()
+
+        context = {
+            'user': user,
+            'account_status': account_status,
+            'user_role': user_role,
+            'user_orders': user_orders,
+            'monthly_orders': monthly_orders,
+            'user_payments': user_payments,
+        }
+
+        return render(request, 'authentication/profiles/user_profile.html', context)

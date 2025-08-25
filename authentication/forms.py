@@ -68,36 +68,35 @@ class OTPForm(forms.Form):
         widget=forms.TextInput(attrs={'placeholder': 'Enter 6-digit OTP', 'class': 'form-input', 'id': 'id_password'}),
     )
 
-class SocialSignupForm(forms.ModelForm):
+class SocialSignupForm(SignupForm):
     class Meta:
         model = CustomUser
-        fields = ['phone_number']  # 👈 only ask for phone number
+        fields = ['phone_number']  # only ask for phone number
 
     def __init__(self, *args, **kwargs):
-        self.sociallogin = kwargs.pop('sociallogin', None)
+        self.sociallogin = kwargs.get("sociallogin")  # allauth passes this
         super().__init__(*args, **kwargs)
 
-        self.fields['phone_number'].required = True  # only required field
+        self.fields['phone_number'].required = True
 
-    def save(self, commit=True):
-        user = super().save(commit=False)
+    def save(self, request):
+        # allauth expects save(request), not save(commit=True)
+        user = super().save(request)
 
-        if self.sociallogin:
-            extra_data = self.sociallogin.account.extra_data
-            given_name = extra_data.get("given_name", "")
-            family_name = extra_data.get("family_name", "")
+        # Get Google data
+        extra_data = self.sociallogin.account.extra_data
+        given_name = extra_data.get("given_name", "")
+        family_name = extra_data.get("family_name", "")
 
-            # 👇 Set full_name automatically
-            if not user.full_name:
-                user.full_name = f"{given_name} {family_name}".strip()
+        # Auto populate full_name
+        if not user.full_name:
+            user.full_name = f"{given_name} {family_name}".strip()
 
-            if not user.email:
-                user.email = extra_data.get("email", "")
+        # Save phone number
+        user.phone_number = self.cleaned_data.get("phone_number")
 
-        if commit:
-            user.save()
+        user.save()
         return user
-
 
 
 class OTPVerificationForm(forms.Form):

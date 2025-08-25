@@ -71,14 +71,15 @@ class OTPForm(forms.Form):
     )
 
 class SocialSignupForm(SignupForm):
+    phone_number = forms.CharField(required=True, max_length=15)
+
     class Meta:
         model = CustomUser
-        fields = ["phone_number"]
+        fields = ("phone_number",)
 
     def __init__(self, *args, **kwargs):
-        self.sociallogin = kwargs.pop("sociallogin", None)  # safer
+        self.sociallogin = kwargs.pop("sociallogin", None)
         super().__init__(*args, **kwargs)
-        self.fields["phone_number"].required = True
 
     def save(self, request):
         user = super().save(request)
@@ -88,11 +89,9 @@ class SocialSignupForm(SignupForm):
             given_name = extra_data.get("given_name", "")
             family_name = extra_data.get("family_name", "")
 
-            # If your model has full_name
             if hasattr(user, "full_name") and not user.full_name:
                 user.full_name = f"{given_name} {family_name}".strip()
             else:
-                # fallback if only first_name/last_name exist
                 if not user.first_name:
                     user.first_name = given_name
                 if not user.last_name:

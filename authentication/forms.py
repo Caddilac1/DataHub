@@ -70,19 +70,28 @@ class OTPForm(forms.Form):
         widget=forms.TextInput(attrs={'placeholder': 'Enter 6-digit OTP', 'class': 'form-input', 'id': 'id_password'}),
     )
 
+
 class SocialSignupForm(SignupForm):
     phone_number = forms.CharField(required=True, max_length=15)
 
     class Meta:
         model = CustomUser
-        fields = ("phone_number",)
+        fields = ("phone_number",)  # only include phone_number
 
     def __init__(self, *args, **kwargs):
         self.sociallogin = kwargs.pop("sociallogin", None)
         super().__init__(*args, **kwargs)
 
+        # remove unwanted fields
+        if "email" in self.fields:
+            del self.fields["email"]
+        if "password1" in self.fields:
+            del self.fields["password1"]
+        if "password2" in self.fields:
+            del self.fields["password2"]
+
     def save(self, request):
-        user = super().save(request)
+        user = super(SignupForm, self).save(request)  # skip parent form's save logic
 
         if self.sociallogin:
             extra_data = self.sociallogin.account.extra_data

@@ -13,5 +13,6 @@ urlpatterns = [
    path('confirm-email/', CustomConfirmEmailView.as_view(), name='confirm_email'),
    path('resend-otp/', ResendVerificationOTPView.as_view(), name='resend_otp'),
    path('users/profile/', UserProfileView.as_view(), name='user_profile'),
+   path('users/orders/', CustomerOrderHistory.as_view(), name='customer_orders'),
    
 ]

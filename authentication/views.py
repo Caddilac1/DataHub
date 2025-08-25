@@ -60,6 +60,25 @@ from django.db.models.functions import TruncMonth
 from django.db.models import Count, Sum
 from .models import DataBundleOrder, Payment
 from django.views.generic import DetailView,ListView,CreateView,UpdateView,DeleteView
+from django.views.generic import ListView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Count, Sum, Avg, Q
+from django.db.models.functions import TruncMonth
+from django.utils import timezone
+from datetime import datetime, timedelta
+from .models import CustomUser, DataBundleOrder, Bundle
+from django.views.generic import ListView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Count, Sum, Avg, Q
+from django.db.models.functions import TruncMonth
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.shortcuts import render
+from django.utils import timezone
+from datetime import datetime, timedelta
+from .models import CustomUser, DataBundleOrder, Bundle
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class RegisterView(View):
@@ -580,17 +599,167 @@ class UserProfileView(LoginRequiredMixin, View):
         return render(request, 'authentication/profiles/user_profile.html', context)
 
 
-class CustomerOrderHistory(ListView):
-    model = CustomUser
-    template_name = 'authentication/profiles/customer_order_history.html'
-    context_object_name = 'customer'
 
+
+class CustomerOrderHistory(LoginRequiredMixin, ListView):
+    model = DataBundleOrder
+    template_name = 'authentication/profiles/customer_order_history.html'
+    context_object_name = 'orders'
+    paginate_by = 20  # Add pagination for better performance
+    
+    def get_queryset(self):
+        """Get orders for the current user with optimized queries"""
+        try:
+            # Use select_related to avoid N+1 queries
+            queryset = DataBundleOrder.objects.filter(
+                user=self.request.user
+            ).select_related(
+                'bundle', 
+                'bundle__telco', 
+                'telco'
+            ).order_by('-created_at')
+            
+            return queryset
+            
+        except Exception as e:
+            logger.error(f"Error fetching orders for user {self.request.user.id}: {str(e)}")
+            return DataBundleOrder.objects.none()
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        customer = self.request.user
-
-        # Fetch all orders for this customer
-        orders = DataBundleOrder.objects.filter(user=customer).order_by('-created_at')
-        context['orders'] = orders
-
+        
+        try:
+            customer = self.request.user
+            orders = self.get_queryset()
+            
+            # Basic order counts with safe defaults
+            context.update({
+                'customer': customer,
+                'orders': orders,
+                'total_orders_count': orders.count() if orders.exists() else 0,
+            })
+            
+            # Only calculate additional statistics if orders exist
+            if orders.exists():
+                context.update(self._get_order_statistics(orders))
+                context.update(self._get_monthly_analysis(orders))
+                context.update(self._get_additional_analytics(orders))
+            else:
+                # Provide safe defaults when no orders exist
+                context.update({
+                    'completed_orders_count': 0,
+                    'pending_orders_count': 0,
+                    'failed_orders_count': 0,
+                    'processing_orders_count': 0,
+                    'cancelled_orders_count': 0,
+                    'monthly_orders': [],
+                    'most_used_telco': None,
+                    'total_spent': 0,
+                    'average_order_value': 0,
+                })
+        
+        except Exception as e:
+            logger.error(f"Error in CustomerOrderHistory context: {str(e)}")
+            # Provide safe fallbacks in case of any error
+            context.update({
+                'orders': DataBundleOrder.objects.none(),
+                'total_orders_count': 0,
+                'completed_orders_count': 0,
+                'pending_orders_count': 0,
+                'failed_orders_count': 0,
+                'processing_orders_count': 0,
+                'cancelled_orders_count': 0,
+                'monthly_orders': [],
+                'most_used_telco': None,
+                'total_spent': 0,
+                'average_order_value': 0,
+            })
+    
         return context
+    
+    def _get_order_statistics(self, orders):
+        """Calculate order statistics by status"""
+        try:
+            stats = orders.aggregate(
+                completed_count=Count('id', filter=Q(status='completed')),
+                pending_count=Count('id', filter=Q(status='pending')),
+                failed_count=Count('id', filter=Q(status='failed')),
+                processing_count=Count('id', filter=Q(status='processing')),
+                cancelled_count=Count('id', filter=Q(status='cancelled')),
+            )
+            
+            return {
+                'completed_orders_count': stats.get('completed_count', 0),
+                'pending_orders_count': stats.get('pending_count', 0),
+                'failed_orders_count': stats.get('failed_count', 0),
+                'processing_orders_count': stats.get('processing_count', 0),
+                'cancelled_orders_count': stats.get('cancelled_count', 0),
+            }
+            
+        except Exception as e:
+            logger.error(f"Error calculating order statistics: {str(e)}")
+            return {
+                'completed_orders_count': 0,
+                'pending_orders_count': 0,
+                'failed_orders_count': 0,
+                'processing_orders_count': 0,
+                'cancelled_orders_count': 0,
+            }
+    
+    def _get_monthly_analysis(self, orders):
+        """Calculate monthly order analysis"""
+        try:
+            monthly_data = orders.annotate(
+                month=TruncMonth('created_at')
+            ).values('month').annotate(
+                count=Count('id'),
+                total_price=Sum('bundle__price'),
+                average_price=Avg('bundle__price')
+            ).order_by('-month')
+            
+            # Convert to list and handle None values
+            monthly_orders = []
+            for item in monthly_data:
+                monthly_orders.append({
+                    'month': item['month'],
+                    'count': item.get('count', 0),
+                    'total_price': item.get('total_price', 0) or 0,
+                    'average_price': item.get('average_price', 0) or 0,
+                })
+            
+            return {'monthly_orders': monthly_orders}
+            
+        except Exception as e:
+            logger.error(f"Error calculating monthly analysis: {str(e)}")
+            return {'monthly_orders': []}
+    
+    def _get_additional_analytics(self, orders):
+        """Calculate additional analytics like most used telco, total spent, etc."""
+        try:
+            # Most used telco
+            most_used_telco = orders.values('bundle__telco__name').annotate(
+                count=Count('id')
+            ).order_by('-count').first()
+            
+            # Financial statistics
+            financial_stats = orders.aggregate(
+                total_spent=Sum('bundle__price'),
+                average_order_value=Avg('bundle__price')
+            )
+            
+            total_spent = financial_stats.get('total_spent') or 0
+            average_order_value = financial_stats.get('average_order_value') or 0
+
+            return {
+                'most_used_telco': most_used_telco['bundle__telco__name'] if most_used_telco else None,
+                'total_spent': total_spent,
+                'average_order_value': average_order_value,
+            }
+
+        except Exception as e:
+            logger.error(f"Error calculating additional analytics: {str(e)}")
+            return {
+                'most_used_telco': None,
+                'total_spent': 0,
+                'average_order_value': 0,
+            }

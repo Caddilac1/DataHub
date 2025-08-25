@@ -365,24 +365,18 @@
             border-color: rgba(255, 255, 255, 0.5);
         }
 
-        /* Content Sections - Fixed Version */
+        /* FIXED CSS */
         .content-section {
-            display: block; /* Always keep in layout */
-            opacity: 0; /* Hidden by default */
-            transform: translateY(20px); /* Slightly offset */
+            display: none; /* Hide inactive sections completely */
+            opacity: 0;
+            transform: translateY(20px);
             transition: opacity 0.3s ease, transform 0.3s ease;
-            position: absolute; /* Remove from flow */
-            width: 100%; /* Full width */
-            visibility: hidden; /* Prevent interaction when hidden */
-            pointer-events: none; /* Prevent clicks when hidden */
         }
 
         .content-section.active {
-            opacity: 1; /* Visible */
-            transform: translateY(0); /* Reset position */
-            position: relative; /* Back in normal flow */
-            visibility: visible; /* Allow interaction */
-            pointer-events: auto; /* Allow clicks */
+            display: block; /* Show active section */
+            opacity: 1;
+            transform: translateY(0);
         }
         /* Dashboard Grid with Staggered Animation */
         .dashboard {

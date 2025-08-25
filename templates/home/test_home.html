@@ -18,7 +18,7 @@
                 <a class="navbar-item active" data-nav="dashboard">Dashboard</a>
                 <a class="navbar-item" data-nav="orders">Recent Orders</a>
                 <a class="navbar-item" data-nav="history">Order History</a>
-                <a class="navbar-item" data-nav="profile">Profile</a>
+                <a class="navbar-item" href="{% url 'user_profile' %}" data-nav="profile">Profile</a>
             </div>
             
              {% if user.profile_picture %}

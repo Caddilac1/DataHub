@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.views.generic import TemplateView, CreateView, UpdateView, DeleteView, View
+from django.views.generic import TemplateView, CreateView, UpdateView, DeleteView, View, ListView   
 from packages.decorators import admin_required
 from django.utils.decorators import method_decorator  
 from django.db.models import Count, Sum, F  
@@ -191,4 +191,21 @@ class AdminViewAllUsersView(LoginRequiredMixin,TemplateView):
         context['title'] = 'All Users'
         context['page_header'] = 'User Management'
         context['users'] = CustomUser.objects.all().order_by('-created_at')
+        return context
+    
+
+@method_decorator(admin_required, name='dispatch')
+class AdminviewAllOrders(LoginRequiredMixin, ListView):
+    model = DataBundleOrder
+    template_name = 'management/admin_view_all_orders.html'
+    context_object_name = 'orders'
+    paginate_by = 20  # Show 20 orders per page
+
+    def get_queryset(self):
+        return DataBundleOrder.objects.select_related('user', 'telco', 'bundle', 'payment').order_by('-created_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'All Orders'
+        context['page_header'] = 'Order Management'
         return context

@@ -59,6 +59,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models.functions import TruncMonth
 from django.db.models import Count, Sum
 from .models import DataBundleOrder, Payment
+from django.views.generic import DetailView,ListView,CreateView,UpdateView,DeleteView
 
 
 class RegisterView(View):
@@ -577,3 +578,19 @@ class UserProfileView(LoginRequiredMixin, View):
         }
 
         return render(request, 'authentication/profiles/user_profile.html', context)
+
+
+class CustomerOrderHistory(ListView):
+    model = CustomUser
+    template_name = 'authentication/profiles/customer_order_history.html'
+    context_object_name = 'customer'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        customer = self.request.user
+
+        # Fetch all orders for this customer
+        orders = DataBundleOrder.objects.filter(user=customer).order_by('-created_at')
+        context['orders'] = orders
+
+        return context

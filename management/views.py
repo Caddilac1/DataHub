@@ -180,3 +180,15 @@ class AdminDashboardView(LoginRequiredMixin,TemplateView):
             health_issues.append(f"🚨 {orders_with_missing_telco} orders have no associated Telco record.")
 
         return {'health_issues': health_issues}
+    
+
+@method_decorator(admin_required, name='dispatch')
+class AdminViewAllUsersView(LoginRequiredMixin,TemplateView):
+    template_name = 'management/admin_view_all_users.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'All Users'
+        context['page_header'] = 'User Management'
+        context['users'] = CustomUser.objects.all().order_by('-created_at')
+        return context

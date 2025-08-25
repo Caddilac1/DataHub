@@ -12,7 +12,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
     <!-- Chart.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     
     <!-- SweetAlert2 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.10.1/sweetalert2.all.min.js"></script>
@@ -833,6 +833,12 @@
 
         // Initialize Charts
         function initializeCharts() {
+            // Check if Chart.js is loaded
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js is not loaded');
+                return;
+            }
+
             // User Role Chart
             const userRoleData = {
                 {% for role, count in user_counts_by_role.items %}
@@ -840,31 +846,34 @@
                 {% endfor %}
             };
 
-            const userRoleChart = new Chart(document.getElementById('userRoleChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(userRoleData),
-                    datasets: [{
-                        data: Object.values(userRoleData),
-                        backgroundColor: [
-                            '#4f46e5',
-                            '#10b981',
-                            '#f59e0b',
-                            '#ef4444'
-                        ],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
+            const userRoleCtx = document.getElementById('userRoleChart');
+            if (userRoleCtx) {
+                const userRoleChart = new Chart(userRoleCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(userRoleData),
+                        datasets: [{
+                            data: Object.values(userRoleData),
+                            backgroundColor: [
+                                '#4f46e5',
+                                '#10b981',
+                                '#f59e0b',
+                                '#ef4444'
+                            ],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
                         }
                     }
-                }
-            });
+                });
+            }
 
             // Order Status Chart
             const orderStatusData = {
@@ -873,32 +882,34 @@
                 {% endfor %}
             };
 
-            const orderStatusChart = new Chart(document.getElementById('orderStatusChart'), {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(orderStatusData),
-                    datasets: [{
-                        label: 'Orders',
-                        data: Object.values(orderStatusData),
-                        backgroundColor: [
-                            '#4f46e5',
-                            '#10b981',
-                            '#f59e0b',
-                            '#ef4444',
-                            '#6366f1'
-                        ],
-                        borderRadius: 6,
-                        borderSkipped: false
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
+            const orderStatusCtx = document.getElementById('orderStatusChart');
+            if (orderStatusCtx) {
+                const orderStatusChart = new Chart(orderStatusCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(orderStatusData),
+                        datasets: [{
+                            label: 'Orders',
+                            data: Object.values(orderStatusData),
+                            backgroundColor: [
+                                '#4f46e5',
+                                '#10b981',
+                                '#f59e0b',
+                                '#ef4444',
+                                '#6366f1'
+                            ],
+                            borderRadius: 6,
+                            borderSkipped: false
+                        }]
                     },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
                     scales: {
                         y: {
                             beginAtZero: true,
@@ -1080,15 +1091,20 @@
 
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
-            initializeCharts();
+            // Wait a bit for all scripts to load
+            setTimeout(() => {
+                initializeCharts();
+            }, 100);
+            
             simulateRealTimeUpdates();
             autoRefreshData();
             
             // Show welcome message for new sessions
-            if (sessionStorage.getItem('dashboardWelcome') !== 'shown') {
+            const welcomeShown = localStorage.getItem('dashboardWelcome');
+            if (!welcomeShown) {
                 setTimeout(() => {
                     showNotification('success', 'Welcome to the Admin Dashboard!');
-                    sessionStorage.setItem('dashboardWelcome', 'shown');
+                    localStorage.setItem('dashboardWelcome', 'shown');
                 }, 1000);
             }
         });
@@ -1110,9 +1126,13 @@
 
         // Handle chart responsiveness
         window.addEventListener('resize', function() {
-            Chart.instances.forEach(chart => {
-                chart.resize();
-            });
+            if (typeof Chart !== 'undefined' && Chart.instances) {
+                Chart.instances.forEach(chart => {
+                    if (chart && typeof chart.resize === 'function') {
+                        chart.resize();
+                    }
+                });
+            }
         });
 
         // Add loading states to action buttons
@@ -1135,11 +1155,16 @@
         // Performance monitoring
         function trackPagePerformance() {
             window.addEventListener('load', function() {
-                const loadTime = window.performance.timing.loadEventEnd - window.performance.timing.navigationStart;
-                console.log('Page load time:', loadTime + 'ms');
-                
-                if (loadTime > 3000) {
-                    console.warn('Slow page load detected');
+                // Use performance.now() for more accurate timing
+                if (window.performance && window.performance.timing) {
+                    const loadTime = window.performance.timing.loadEventEnd - window.performance.timing.navigationStart;
+                    if (loadTime > 0) {
+                        console.log('Page load time:', loadTime + 'ms');
+                        
+                        if (loadTime > 3000) {
+                            console.warn('Slow page load detected');
+                        }
+                    }
                 }
             });
         }

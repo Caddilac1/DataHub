@@ -73,32 +73,35 @@ class OTPForm(forms.Form):
 class SocialSignupForm(SignupForm):
     class Meta:
         model = CustomUser
-        fields = ['phone_number']  # only ask for phone number
+        fields = ["phone_number"]
 
     def __init__(self, *args, **kwargs):
-        self.sociallogin = kwargs.get("sociallogin")  # allauth passes this
+        self.sociallogin = kwargs.pop("sociallogin", None)  # safer
         super().__init__(*args, **kwargs)
-
-        self.fields['phone_number'].required = True
+        self.fields["phone_number"].required = True
 
     def save(self, request):
-        # allauth expects save(request), not save(commit=True)
         user = super().save(request)
 
-        # Get Google data
-        extra_data = self.sociallogin.account.extra_data
-        given_name = extra_data.get("given_name", "")
-        family_name = extra_data.get("family_name", "")
+        if self.sociallogin:
+            extra_data = self.sociallogin.account.extra_data
+            given_name = extra_data.get("given_name", "")
+            family_name = extra_data.get("family_name", "")
 
-        # Auto populate full_name
-        if not user.full_name:
-            user.full_name = f"{given_name} {family_name}".strip()
+            # If your model has full_name
+            if hasattr(user, "full_name") and not user.full_name:
+                user.full_name = f"{given_name} {family_name}".strip()
+            else:
+                # fallback if only first_name/last_name exist
+                if not user.first_name:
+                    user.first_name = given_name
+                if not user.last_name:
+                    user.last_name = family_name
 
-        # Save phone number
         user.phone_number = self.cleaned_data.get("phone_number")
-
         user.save()
         return user
+
 
 
 class OTPVerificationForm(forms.Form):

@@ -4,7 +4,7 @@ import json
 class DataMartClient:
     def __init__(self, api_key):
         self.api_key = api_key
-        self.base_url = 'https://datamartbackened.onrender.com/api/developer'
+        self.base_url = 'https://api.datamartgh.shop/api/developer'
         self.headers = {
             'Content-Type': 'application/json',
             'X-API-Key': api_key

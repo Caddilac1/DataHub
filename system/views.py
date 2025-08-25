@@ -97,31 +97,22 @@ class TelcoStockListView(ListView):
 
 
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 class TestHomeView(LoginRequiredMixin, TemplateView):
-    """
-    A class-based view to display the home page with bundles categorized by telco,
-    without using JSON for client-side rendering.
-    """
     template_name = 'home/test_home.html'
 
     def get_context_data(self, **kwargs):
-        """
-        Populate the context with a structured dictionary of data plans.
-        """
         context = super().get_context_data(**kwargs)
-        
+
+        logger.debug("[TestHomeView] Fetching non-agent bundles...")
         bundles = Bundle.objects.select_related('telco').filter(is_agent_bundle=False).order_by('telco__name', 'size_mb')
+        logger.debug(f"[TestHomeView] Total bundles fetched: {bundles.count()}")
+
         data_plans = {}
-
-        orders = DataBundleOrder.objects.filter(user=self.request.user).order_by('-created_at')
-        paginator = Paginator(orders, 15)  # 15 per page
-        page_number = self.request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
-
-        today = timezone.now().date()
-        rec_orders = DataBundleOrder.objects.filter(created_at__date=today).order_by('-created_at')
-
-        telcos = Telco.objects.all()
+        telco_stock_status = {}  # <-- new dict for telco stock states
 
         for bundle in bundles:
             size_display = f"{bundle.size_mb // 1000}GB" if bundle.size_mb >= 1000 else f"{bundle.size_mb}MB"
@@ -130,26 +121,69 @@ class TestHomeView(LoginRequiredMixin, TemplateView):
             provider_name = bundle.telco.name
             if provider_name not in data_plans:
                 data_plans[provider_name] = []
+                telco_stock_status[provider_name] = []
+                logger.debug(f"[TestHomeView] Initializing telco entry: {provider_name}")
 
+            # Add bundle info
             data_plans[provider_name].append({
                 'id': bundle.id,
                 'size': size_display,
-                'price': f"{bundle.price:.2f}",  # Keep price as string for display
+                'price': f"{bundle.price:.2f}",
                 'validity': validity,
-                'code': bundle.telco.code
+                'code': bundle.telco.code,
+                'is_instock': bundle.is_instock
             })
-        
-        context['data_plans'] = data_plans
-        context['paystack_public_key'] = settings.TEST_PUBLIC_KEY  # Use the test public key for client-side integration
-        context['user'] = self.request.user 
-        context['orders'] = orders  # Include user's past orders for display
-        context['rec_orders'] = rec_orders  # Include recent orders for display
-        context['page_obj'] = page_obj  # Pass the paginated orders to the template 
-        context['telcos'] = telcos  # Include telco information for display
- # Pass the user object to the template for
-        
+
+            logger.debug(
+                f"[TestHomeView] Bundle added | Telco={provider_name}, Size={size_display}, "
+                f"Price={bundle.price:.2f}, Stock={bundle.is_instock}"
+            )
+
+            # Track stock availability for this telco
+            telco_stock_status[provider_name].append(bundle.is_instock)
+
+        # Determine stock summary per telco
+        telco_summary = {}
+        for telco, stocks in telco_stock_status.items():
+            if all(stocks):
+                telco_summary[telco] = "in-stock"
+            elif any(stocks):
+                telco_summary[telco] = "limited-stock"
+            else:
+                telco_summary[telco] = "out-of-stock"
+
+            logger.debug(f"[TestHomeView] Telco summary | {telco}: {telco_summary[telco]}")
+
+        # Fetch user orders
+        orders = DataBundleOrder.objects.filter(user=self.request.user).order_by('-created_at')
+        logger.debug(f"[TestHomeView] Orders for {self.request.user}: {orders.count()}")
+
+        paginator = Paginator(orders, 15)
+        page_number = self.request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        logger.debug(f"[TestHomeView] Paginated orders | Page={page_number}, Objects={len(page_obj)}")
+
+        # Fetch today’s recent orders
+        today = timezone.now().date()
+        rec_orders = DataBundleOrder.objects.filter(created_at__date=today).order_by('-created_at')
+        logger.debug(f"[TestHomeView] Recent orders today ({today}): {rec_orders.count()}")
+
+        # Update context
+        context.update({
+            'data_plans': data_plans,
+            'telco_summary': telco_summary,
+            'paystack_public_key': settings.TEST_PUBLIC_KEY,
+            'user': self.request.user,
+            'orders': orders,
+            'rec_orders': rec_orders,
+            'page_obj': page_obj,
+            'telcos': Telco.objects.all()
+        })
+
+        logger.debug("[TestHomeView] Context successfully prepared.")
+
         return context
-    
+
 
 
 # home/views.py

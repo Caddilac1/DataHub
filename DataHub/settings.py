@@ -37,6 +37,15 @@ DEBUG = False
 ALLOWED_HOSTS = ['localhost', '127.0.0.1','datamart.up.railway.app','datahub.up.railway.app']
 SITE_ID = 1
 
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+SECURE_SSL_REDIRECT = True
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
+
+
 
 # Application definition
 

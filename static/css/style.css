@@ -365,16 +365,19 @@
             border-color: rgba(255, 255, 255, 0.5);
         }
 
-        /* Content Sections */
+        /* FIXED CSS */
         .content-section {
-            display: none;
-            animation: fadeInUp 0.6s ease-out;
+            display: none; /* Hide inactive sections completely */
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
         }
 
         .content-section.active {
-            display: block;
+            display: block; /* Show active section */
+            opacity: 1;
+            transform: translateY(0);
         }
-
         /* Dashboard Grid with Staggered Animation */
         .dashboard {
             display: grid;

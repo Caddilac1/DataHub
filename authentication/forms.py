@@ -74,10 +74,27 @@ class SocialSignupForm(forms.ModelForm):
         fields = ['full_name', 'phone_number']
 
     def __init__(self, *args, **kwargs):
+        # 🚑 Fix: Allauth sends "sociallogin" here
+        self.sociallogin = kwargs.pop('sociallogin', None)
         super().__init__(*args, **kwargs)
+
         self.fields['full_name'].required = True
         self.fields['phone_number'].required = True
 
+    def save(self, commit=True):
+        user = super().save(commit=False)
+
+        # Optionally use Google profile info
+        if self.sociallogin:
+            extra_data = self.sociallogin.account.extra_data
+            if not user.full_name:
+                user.full_name = extra_data.get("name", "")
+            if not user.email:
+                user.email = extra_data.get("email", "")
+
+        if commit:
+            user.save()
+        return user
 
 
 class OTPVerificationForm(forms.Form):

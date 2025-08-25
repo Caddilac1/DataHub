@@ -12,5 +12,6 @@ urlpatterns = [
    path('login/', CustomLoginView.as_view(), name='login'),
    path('confirm-email/', CustomConfirmEmailView.as_view(), name='confirm_email'),
    path('resend-otp/', ResendVerificationOTPView.as_view(), name='resend_otp'),
+   path('users/profile/', UserProfileView.as_view(), name='user_profile'),
    
 ]

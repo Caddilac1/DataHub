@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the table to ensure readability */
+        .table-auto {
+            width: 100%;
+        }
+        .table-auto th, .table-auto td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .table-auto th {
+            background-color: #f8fafc;
+            color: #4a5568;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+        }
+        .table-auto tbody tr:hover {
+            background-color: #f0f4f8;
+            transition: background-color 0.2s ease-in-out;
+        }
+        /* Status badge styles */
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+        .status-pending { background-color: #fde68a; color: #92400e; }
+        .status-processing { background-color: #bfdbfe; color: #1e40af; }
+        .status-completed { background-color: #a7f3d0; color: #065f46; }
+        .status-failed { background-color: #fecaca; color: #991b1b; }
+        .status-cancelled { background-color: #d1d5db; color: #374151; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans leading-normal tracking-normal">
+
+    <div class="container mx-auto mt-10 p-4 sm:p-6 lg:p-8">
+        <div class="bg-white shadow-xl rounded-lg p-6">
+            <header class="mb-6 border-b pb-4">
+                <h1 class="text-3xl font-bold text-gray-800">{{ page_header }}</h1>
+                <p class="text-gray-500 text-sm mt-1">Manage and view all data bundle orders.</p>
+            </header>
+
+            <main>
+                {% if orders %}
+                    <div class="overflow-x-auto">
+                        <table class="table-auto w-full text-sm text-gray-700">
+                            <thead>
+                                <tr>
+                                    <th class="px-4 py-2">Order ID</th>
+                                    <th class="px-4 py-2">Customer</th>
+                                    <th class="px-4 py-2">Telco</th>
+                                    <th class="px-4 py-2">Bundle</th>
+                                    <th class="px-4 py-2">Phone Number</th>
+                                    <th class="px-4 py-2">Amount</th>
+                                    <th class="px-4 py-2">Status</th>
+                                    <th class="px-4 py-2">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in orders %}
+                                    <tr class="bg-white border-b hover:bg-gray-50">
+                                        <td class="px-4 py-2 font-mono text-xs text-gray-600">{{ order.id }}</td>
+                                        <td class="px-4 py-2">
+                                            <a href="#" class="text-blue-500 hover:underline">
+                                                {{ order.user.full_name }}
+                                            </a>
+                                            <p class="text-xs text-gray-400">{{ order.user.email }}</p>
+                                        </td>
+                                        <td class="px-4 py-2">
+                                            {{ order.telco.name }}
+                                        </td>
+                                        <td class="px-4 py-2">
+                                            <p>{{ order.bundle.size_mb }}MB</p>
+                                            <p class="text-xs text-gray-400">{{ order.bundle.name }}</p>
+                                        </td>
+                                        <td class="px-4 py-2">{{ order.phone_number }}</td>
+                                        <td class="px-4 py-2 font-bold text-gray-900">
+                                            ${{ order.payment.amount|floatformat:2 }}
+                                        </td>
+                                        <td class="px-4 py-2">
+                                            <span class="status-badge status-{{ order.status }}">
+                                                {{ order.status }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-2 text-xs text-gray-500">
+                                            {{ order.created_at|date:"M d, Y H:i" }}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center p-8 text-gray-500">
+                        <p class="text-lg font-semibold">No orders found.</p>
+                        <p class="text-sm mt-2">Check back later or adjust your search criteria.</p>
+                    </div>
+                {% endif %}
+
+                {% if is_paginated %}
+                <div class="flex items-center justify-between mt-6">
+                    <div>
+                        <span class="text-sm text-gray-700">
+                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100">
+                                Previous
+                            </a>
+                        {% endif %}
+
+                        {% for i in paginator.page_range %}
+                            {% if page_obj.number == i %}
+                                <a href="?page={{ i }}" class="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-300 rounded-lg cursor-not-allowed">
+                                    {{ i }}
+                                </a>
+                            {% else %}
+                                <a href="?page={{ i }}" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100">
+                                    {{ i }}
+                                </a>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100">
+                                Next
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </main>
+        </div>
+    </div>
+</body>
+</html>

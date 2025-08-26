@@ -429,7 +429,7 @@
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-600">Completed</p>
-                            <p class="text-2xl font-bold text-gray-900">{% if orders %}{% for order in orders %}{% if order.status == 'completed' %}{{ forloop.counter0|add:1 }}{% endif %}{% endfor %}{% else %}0{% endif %}</p>
+                            <p class="text-2xl font-bold text-gray-900">{{total_completed_orders}}</p>
                         </div>
                     </div>
                 </div>
@@ -441,7 +441,7 @@
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-600">Pending</p>
-                            <p class="text-2xl font-bold text-gray-900">{% if orders %}{% for order in orders %}{% if order.status == 'pending' %}{{ forloop.counter0|add:1 }}{% endif %}{% endfor %}{% else %}0{% endif %}</p>
+                            <p class="text-2xl font-bold text-gray-900">{{total_pending_orders}}</p>
                         </div>
                     </div>
                 </div>
@@ -453,7 +453,7 @@
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-600">Failed</p>
-                            <p class="text-2xl font-bold text-gray-900">{% if orders %}{% for order in orders %}{% if order.status == 'failed' %}{{ forloop.counter0|add:1 }}{% endif %}{% endfor %}{% else %}0{% endif %}</p>
+                            <p class="text-2xl font-bold text-gray-900">{{total_failed_orders}}</p>
                         </div>
                     </div>
                 </div>

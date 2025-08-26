@@ -206,6 +206,18 @@ class AdminviewAllOrders(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        orders = DataBundleOrder.objects.select_related('user', 'telco', 'bundle', 'payment').order_by('-created_at')
+        total_pending_orders = orders.filter(status='pending').count()
+        total_processing_orders = orders.filter(status='processing').count()
+        total_failed_orders = orders.filter(status='failed').count()
+        total_cancelled_orders = orders.filter(status='cancelled').count()
+        total_completed_orders = orders.filter(status='completed').count()
+        
         context['title'] = 'All Orders'
+        context['total_pending_orders'] = total_pending_orders
+        context['total_processing_orders'] = total_processing_orders
+        context['total_failed_orders'] = total_failed_orders
+        context['total_cancelled_orders'] = total_cancelled_orders 
+        context['total_completed_orders'] = total_completed_orders 
         context['page_header'] = 'Order Management'
         return context

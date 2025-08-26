@@ -474,7 +474,7 @@
     <!-- Sidebar -->
     <nav class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <a href="" class="sidebar-brand">
+            <a href="#" class="sidebar-brand">
                 <i class="fas fa-database"></i>
                 DataBundle Admin
             </a>
@@ -501,14 +501,14 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="" class="nav-link">
+                    <a href="#" class="nav-link">
                         <i class="fas fa-user-clock"></i>
                         Pending Verification
                         <span class="badge">{{ pending_verification_users }}</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="" class="nav-link">
+                    <a href="#" class="nav-link">
                         <i class="fas fa-shield-alt"></i>
                         Admins & Agents
                     </a>
@@ -525,13 +525,13 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="" class="nav-link">
+                    <a href="#" class="nav-link">
                         <i class="fas fa-credit-card"></i>
                         Payments
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="" class="nav-link">
+                    <a href="#" class="nav-link">
                         <i class="fas fa-chart-line"></i>
                         Analytics
                     </a>
@@ -541,7 +541,7 @@
             <div class="nav-section">
                 <div class="nav-section-title">Management</div>
                 <div class="nav-item">
-                    <a href="" class="nav-link">
+                    <a href="#" class="nav-link">
                         <i class="fas fa-sim-card"></i>
                         Telcos & Bundles
                     </a>
@@ -570,7 +570,7 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="" class="nav-link">
+                    <a href="#" class="nav-link">
                         <i class="fas fa-bug"></i>
                         System Health
                     </a>
@@ -601,10 +601,10 @@
                         {{ request.user.full_name.0 }}
                     </div>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href=""><i class="fas fa-user me-2"></i>Profile</a></li>
-                        <li><a class="dropdown-item" href=""><i class="fas fa-cog me-2"></i>Settings</a></li>
+                        <li><a class="dropdown-item" href="{% url 'user_profile' %}"><i class="fas fa-user me-2"></i>Profile</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href=""><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        <li><a class="dropdown-item" href="{% url 'signout' %}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                     </ul>
                 </div>
             </div>

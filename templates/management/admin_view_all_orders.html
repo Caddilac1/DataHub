@@ -256,7 +256,7 @@
             <nav class="flex-1 px-4 py-6 custom-scrollbar overflow-y-auto">
                 <div class="space-y-2">
                     <!-- Dashboard -->
-                    <a href="#" class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-all duration-200 group">
+                    <a href="{% url 'admin_dashboard' %}" class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-all duration-200 group">
                         <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3 group-hover:scale-110 transition-transform"></i>
                         <span class="font-medium">Dashboard</span>
                     </a>
@@ -269,7 +269,7 @@
                     </a>
                     
                     <!-- Users -->
-                    <a href="#" class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-all duration-200 group">
+                    <a href="{% url 'view_all_users' %}" class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-all duration-200 group">
                         <i data-lucide="users" class="w-5 h-5 mr-3 group-hover:scale-110 transition-transform"></i>
                         <span class="font-medium">Users</span>
                     </a>
@@ -305,6 +305,10 @@
                             <span class="font-medium">Settings</span>
                         </a>
                         
+                        <a href="{% url 'signout' %}" class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-all duration-200 group">
+                            <i data-lucide="help-circle" class="w-5 h-5 mr-3 group-hover:scale-110 transition-transform"></i>
+                            <span class="font-medium">Logout</span>
+                        </a>
                         <a href="#" class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-all duration-200 group">
                             <i data-lucide="help-circle" class="w-5 h-5 mr-3 group-hover:scale-110 transition-transform"></i>
                             <span class="font-medium">Help & Support</span>
@@ -320,7 +324,7 @@
                         <span class="text-white text-sm font-bold">AD</span>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-gray-900 truncate">Admin User</p>
+                        <p class="text-sm font-medium text-gray-900 truncate">Admin {{request.user.full_name}}</p>
                         <p class="text-xs text-gray-500">Administrator</p>
                     </div>
                     <button class="p-1 text-gray-400 hover:text-gray-600">

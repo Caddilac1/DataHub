@@ -445,6 +445,18 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-yellow-100 rounded-lg">
+                            <i data-lucide="clock" class="w-6 h-6 text-yellow-600"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-gray-600">Processing</p>
+                            <p class="text-2xl font-bold text-gray-900">{{total_processing_orders}}</p>
+                        </div>
+                    </div>
+                </div>
                 
                 <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
                     <div class="flex items-center">
@@ -459,18 +471,7 @@
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
-                    <div class="flex items-center">
-                        <div class="p-2 bg-red-100 rounded-lg">
-                            <i data-lucide="x-circle" class="w-6 h-6 text-red-600"></i>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-sm font-medium text-gray-600">Processing</p>
-                            <p class="text-2xl font-bold text-gray-900">{{total_processing_orders}}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+           
             
             <!-- Orders Table -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden fade-in">

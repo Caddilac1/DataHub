@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} | DataBundle Admin</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.10.1/sweetalert2.all.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --secondary-color: #6366f1;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #3b82f6;
+            --light-gray: #f8fafc;
+            --dark-gray: #1f2937;
+            --sidebar-width: 280px;
+            --navbar-height: 70px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: var(--sidebar-width);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            z-index: 1000;
+            transition: transform 0.3s ease-in-out;
+            overflow-y: auto;
+            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-header {
+            padding: 2rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-brand {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .sidebar-brand i {
+            margin-right: 0.5rem;
+            color: #a5b4fc;
+        }
+
+        .sidebar-nav {
+            padding: 1rem 0;
+        }
+
+        .nav-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .nav-section-title {
+            color: #a5b4fc;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+            padding: 0 1.5rem;
+        }
+
+        .nav-item {
+            margin-bottom: 0.25rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-left-color: white;
+        }
+
+        .nav-link i {
+            width: 20px;
+            margin-right: 0.75rem;
+            text-align: center;
+        }
+
+        .nav-link .badge {
+            margin-left: auto;
+            background-color: var(--warning-color);
+            color: white;
+        }
+
+        /* Main Content */
+        .main-wrapper {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            transition: margin-left 0.3s ease-in-out;
+        }
+
+        /* Top Navbar */
+        .top-navbar {
+            background: white;
+            height: var(--navbar-height);
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .navbar-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .sidebar-toggle {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            color: var(--dark-gray);
+            margin-right: 1rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s;
+        }
+
+        .sidebar-toggle:hover {
+            background-color: var(--light-gray);
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dark-gray);
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .navbar-search {
+            position: relative;
+        }
+
+        .navbar-search input {
+            width: 300px;
+            padding: 0.5rem 1rem 0.5rem 2.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            background-color: var(--light-gray);
+        }
+
+        .navbar-search i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+        }
+
+        .user-dropdown {
+            position: relative;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Dashboard Content */
+        .dashboard-content {
+            padding: 2rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .metric-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            color: white;
+        }
+
+        .metric-icon.users { background: linear-gradient(135deg, var(--info-color), #60a5fa); }
+        .metric-icon.orders { background: linear-gradient(135deg, var(--success-color), #34d399); }
+        .metric-icon.otps { background: linear-gradient(135deg, var(--warning-color), #fbbf24); }
+        .metric-icon.pending { background: linear-gradient(135deg, var(--danger-color), #f87171); }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark-gray);
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-label {
+            color: #6b7280;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .metric-breakdown {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .breakdown-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .breakdown-label {
+            font-size: 0.8rem;
+            color: #6b7280;
+            text-transform: capitalize;
+        }
+
+        .breakdown-value {
+            font-weight: 600;
+            color: var(--dark-gray);
+        }
+
+        /* Charts Section */
+        .charts-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+        }
+
+        .chart-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--dark-gray);
+        }
+
+        /* Tables */
+        .table-section {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--dark-gray);
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table th {
+            border-top: none;
+            border-bottom: 2px solid #e5e7eb;
+            font-weight: 600;
+            color: var(--dark-gray);
+            font-size: 0.875rem;
+            padding: 1rem 0.75rem;
+        }
+
+        .table td {
+            padding: 0.75rem;
+            border-top: 1px solid #f3f4f6;
+            vertical-align: middle;
+        }
+
+        .badge-status {
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .badge-success { background-color: #dcfce7; color: #166534; }
+        .badge-pending { background-color: #fef3c7; color: #a16207; }
+        .badge-failed { background-color: #fee2e2; color: #dc2626; }
+        .badge-active { background-color: #dbeafe; color: #1e40af; }
+
+        /* System Config Cards */
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .config-card {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            border: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .config-info h6 {
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+            color: var(--dark-gray);
+        }
+
+        .config-info small {
+            color: #6b7280;
+        }
+
+        .form-switch .form-check-input {
+            width: 3rem;
+            height: 1.5rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-wrapper {
+                margin-left: 0;
+            }
+
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .navbar-search {
+                display: none;
+            }
+        }
+
+        /* Custom Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .metric-card {
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        .metric-card:nth-child(1) { animation-delay: 0.1s; }
+        .metric-card:nth-child(2) { animation-delay: 0.2s; }
+        .metric-card:nth-child(3) { animation-delay: 0.3s; }
+        .metric-card:nth-child(4) { animation-delay: 0.4s; }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="" class="sidebar-brand">
+                <i class="fas fa-database"></i>
+                DataBundle Admin
+            </a>
+        </div>
+        
+        <div class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <div class="nav-item">
+                    <a href="{% url 'admin_home_page' %}" class="nav-link active">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </a>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">User Management</div>
+                <div class="nav-item">
+                    <a href="{% url 'view_all_users' %}" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        All Users
+                        <span class="badge">{{ total_users }}</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="" class="nav-link">
+                        <i class="fas fa-user-clock"></i>
+                        Pending Verification
+                        <span class="badge">{{ pending_verification_users }}</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="" class="nav-link">
+                        <i class="fas fa-shield-alt"></i>
+                        Admins & Agents
+                    </a>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Orders & Payments</div>
+                <div class="nav-item">
+                    <a href="{% url 'view_all_orders' %}" class="nav-link">
+                        <i class="fas fa-shopping-cart"></i>
+                        All Orders
+                        <span class="badge">{{ total_orders }}</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="" class="nav-link">
+                        <i class="fas fa-credit-card"></i>
+                        Payments
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        Analytics
+                    </a>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Management</div>
+                <div class="nav-item">
+                    <a href="" class="nav-link">
+                        <i class="fas fa-sim-card"></i>
+                        Telcos & Bundles
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="" class="nav-link">
+                        <i class="fas fa-key"></i>
+                        OTP Management
+                        <span class="badge">{{ total_otps }}</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-cogs"></i>
+                        System Config
+                    </a>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Reports & Logs</div>
+                <div class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-file-alt"></i>
+                        Audit Logs
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="" class="nav-link">
+                        <i class="fas fa-bug"></i>
+                        System Health
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-wrapper">
+        <!-- Top Navbar -->
+        <nav class="top-navbar">
+            <div class="navbar-left">
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 class="page-title">{{ page_header }}</h1>
+            </div>
+            
+            <div class="navbar-right">
+                <div class="navbar-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" class="form-control" placeholder="Search users, orders...">
+                </div>
+                
+                <div class="dropdown user-dropdown">
+                    <div class="user-avatar" data-bs-toggle="dropdown">
+                        {{ request.user.full_name.0 }}
+                    </div>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href=""><i class="fas fa-user me-2"></i>Profile</a></li>
+                        <li><a class="dropdown-item" href=""><i class="fas fa-cog me-2"></i>Settings</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href=""><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Dashboard Content -->
+        <div class="dashboard-content">
+            <!-- Metrics Grid -->
+            <div class="metrics-grid">
+                <!-- Total Users Card -->
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div>
+                            <div class="metric-value">{{ total_users }}</div>
+                            <div class="metric-label">Total Users</div>
+                        </div>
+                        <div class="metric-icon users">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <div class="metric-breakdown">
+                        {% for role, count in user_counts_by_role.items %}
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">{{ role|title }}</span>
+                            <span class="breakdown-value">{{ count }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Total Orders Card -->
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div>
+                            <div class="metric-value">{{ total_orders }}</div>
+                            <div class="metric-label">Total Orders</div>
+                        </div>
+                        <div class="metric-icon orders">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                    </div>
+                    <div class="metric-breakdown">
+                        {% for status, count in order_counts_by_status.items %}
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">{{ status|title }}</span>
+                            <span class="breakdown-value">{{ count }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- OTP Statistics Card -->
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div>
+                            <div class="metric-value">{{ total_otps }}</div>
+                            <div class="metric-label">OTP Requests</div>
+                        </div>
+                        <div class="metric-icon otps">
+                            <i class="fas fa-key"></i>
+                        </div>
+                    </div>
+                    <div class="metric-breakdown">
+                        {% for status, count in otp_counts_by_status.items %}
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">{{ status|title }}</span>
+                            <span class="breakdown-value">{{ count }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Pending Verification Card -->
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div>
+                            <div class="metric-value">{{ pending_verification_users }}</div>
+                            <div class="metric-label">Pending Verification</div>
+                        </div>
+                        <div class="metric-icon pending">
+                            <i class="fas fa-user-clock"></i>
+                        </div>
+                    </div>
+                    <div class="metric-breakdown">
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Action Required</span>
+                            <span class="breakdown-value">
+                                {% if pending_verification_users > 0 %}
+                                    <button class="btn btn-sm btn-warning" onclick="showPendingUsers()">
+                                        View All
+                                    </button>
+                                {% else %}
+                                    <span class="text-success">All Clear</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="charts-section">
+                <div class="chart-card">
+                    <h5 class="chart-title">User Distribution by Role</h5>
+                    <canvas id="userRoleChart"></canvas>
+                </div>
+                
+                <div class="chart-card">
+                    <h5 class="chart-title">Order Status Distribution</h5>
+                    <canvas id="orderStatusChart"></canvas>
+                </div>
+            </div>
+
+            <!-- System Configuration -->
+            <div class="table-section">
+                <h5 class="section-title">
+                    <i class="fas fa-cogs me-2"></i>
+                    System Configuration
+                </h5>
+                <div class="config-grid">
+                    {% for config in system_configs %}
+                    <div class="config-card">
+                        <div class="config-info">
+                            <h6>{{ config.get_key_display }}</h6>
+                            <small class="text-muted">
+                                {% if config.description %}
+                                    {{ config.description }}
+                                {% else %}
+                                    Control {{ config.get_key_display|lower }} system behavior
+                                {% endif %}
+                            </small>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" 
+                                   id="config_{{ config.key }}" 
+                                   data-config="{{ config.key }}"
+                                   {% if config.value %}checked{% endif %}
+                                   onchange="toggleConfig('{{ config.key }}', this.checked)">
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Recent Audit Logs -->
+            <div class="table-section">
+                <h5 class="section-title">
+                    <i class="fas fa-history me-2"></i>
+                    Recent System Activity
+                </h5>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>User</th>
+                                <th>Action</th>
+                                <th>IP Address</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in recent_audit_logs %}
+                            <tr>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ log.created_at|date:"M j, H:i" }}
+                                    </small>
+                                </td>
+                                <td>
+                                    {% if log.user %}
+                                        <strong>{{ log.user.full_name }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ log.user.email }}</small>
+                                    {% else %}
+                                        <span class="text-muted">System</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="fw-medium">{{ log.get_action_display }}</span>
+                                </td>
+                                <td>
+                                    <code class="text-muted">{{ log.ip_address|default:"N/A" }}</code>
+                                </td>
+                                <td>
+                                    {% if "failed" in log.action or "error" in log.action %}
+                                        <span class="badge-status badge-failed">Failed</span>
+                                    {% elif "locked" in log.action %}
+                                        <span class="badge-status badge-pending">Warning</span>
+                                    {% else %}
+                                        <span class="badge-status badge-success">Success</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-2x mb-2"></i>
+                                    <br>
+                                    No audit logs found
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <a href="#" class="btn btn-outline-primary">
+                        <i class="fas fa-eye me-1"></i>
+                        View All Logs
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Sidebar toggle functionality
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('active');
+        });
+
+        // Initialize Charts
+        function initializeCharts() {
+            // Check if Chart.js is loaded
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js is not loaded');
+                return;
+            }
+
+            // User Role Chart
+            const userRoleData = {
+                {% for role, count in user_counts_by_role.items %}
+                '{{ role|title }}': {{ count }},
+                {% endfor %}
+            };
+
+            const userRoleCtx = document.getElementById('userRoleChart');
+            if (userRoleCtx) {
+                const userRoleChart = new Chart(userRoleCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(userRoleData),
+                        datasets: [{
+                            data: Object.values(userRoleData),
+                            backgroundColor: [
+                                '#4f46e5',
+                                '#10b981',
+                                '#f59e0b',
+                                '#ef4444'
+                            ],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Order Status Chart
+            const orderStatusData = {
+                {% for status, count in order_counts_by_status.items %}
+                '{{ status|title }}': {{ count }},
+                {% endfor %}
+            };
+
+            const orderStatusCtx = document.getElementById('orderStatusChart');
+            if (orderStatusCtx) {
+                const orderStatusChart = new Chart(orderStatusCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(orderStatusData),
+                        datasets: [{
+                            label: 'Orders',
+                            data: Object.values(orderStatusData),
+                            backgroundColor: [
+                                '#4f46e5',
+                                '#10b981',
+                                '#f59e0b',
+                                '#ef4444',
+                                '#6366f1'
+                            ],
+                            borderRadius: 6,
+                            borderSkipped: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#f3f4f6'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // System Configuration Toggle
+        function toggleConfig(configKey, isEnabled) {
+            Swal.fire({
+                title: 'Update Configuration',
+                text: `Are you sure you want to ${isEnabled ? 'enable' : 'disable'} ${configKey.replace('_', ' ')}?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#4f46e5',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, update it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Here you would make an AJAX call to your Django view
+                    // For now, we'll just show a success message
+                    Swal.fire({
+                        title: 'Updated!',
+                        text: `Configuration has been ${isEnabled ? 'enabled' : 'disabled'}.`,
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    // Reset the toggle if cancelled
+                    document.getElementById(`config_${configKey}`).checked = !isEnabled;
+                }
+            });
+        }
+
+        // Show Pending Users
+        function showPendingUsers() {
+            Swal.fire({
+                title: 'Pending Verification Users',
+                text: 'Would you like to view all users pending email verification?',
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonColor: '#4f46e5',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'View Users',
+                cancelButtonText: 'Later'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Redirect to pending users page
+                    window.location.href = ''; // Add your URL here
+                }
+            });
+        }
+
+        // Real-time updates simulation
+        function simulateRealTimeUpdates() {
+            // This would be replaced with WebSocket or Server-Sent Events in production
+            setInterval(() => {
+                // Update timestamp in audit logs
+                const timeElements = document.querySelectorAll('td small.text-muted');
+                timeElements.forEach(el => {
+                    if (el.textContent.includes('seconds ago')) {
+                        const seconds = parseInt(el.textContent.match(/\d+/)[0]) + 1;
+                        el.textContent = `${seconds} seconds ago`;
+                    }
+                });
+            }, 1000);
+        }
+
+        // Quick Actions
+        function quickAction(action) {
+            let title, text, icon;
+            
+            switch(action) {
+                case 'backup':
+                    title = 'System Backup';
+                    text = 'Initiate a full system backup?';
+                    icon = 'question';
+                    break;
+                case 'maintenance':
+                    title = 'Maintenance Mode';
+                    text = 'Enable maintenance mode? This will temporarily disable user access.';
+                    icon = 'warning';
+                    break;
+                case 'cleanup':
+                    title = 'Clean Old Data';
+                    text = 'This will remove expired OTPs and old audit logs. Continue?';
+                    icon = 'question';
+                    break;
+                default:
+                    return;
+            }
+            
+            Swal.fire({
+                title: title,
+                text: text,
+                icon: icon,
+                showCancelButton: true,
+                confirmButtonColor: '#4f46e5',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, proceed!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Show loading
+                    Swal.fire({
+                        title: 'Processing...',
+                        text: 'Please wait while we process your request.',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        willOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                    
+                    // Simulate processing time
+                    setTimeout(() => {
+                        Swal.fire({
+                            title: 'Success!',
+                            text: `${title} completed successfully.`,
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    }, 2000);
+                }
+            });
+        }
+
+        // Search functionality
+        document.querySelector('.navbar-search input').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            if (searchTerm.length > 2) {
+                // Here you would implement search logic
+                console.log('Searching for:', searchTerm);
+            }
+        });
+
+        // Notification system
+        function showNotification(type, message) {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                }
+            });
+
+            Toast.fire({
+                icon: type,
+                title: message
+            });
+        }
+
+        // Auto-refresh data every 30 seconds
+        function autoRefreshData() {
+            setInterval(() => {
+                // In production, this would fetch fresh data via AJAX
+                console.log('Auto-refreshing dashboard data...');
+                
+                // Show subtle indicator
+                showNotification('info', 'Dashboard data updated');
+            }, 30000);
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait a bit for all scripts to load
+            setTimeout(() => {
+                initializeCharts();
+            }, 100);
+            
+            simulateRealTimeUpdates();
+            autoRefreshData();
+            
+            // Show welcome message for new sessions
+            const welcomeShown = localStorage.getItem('dashboardWelcome');
+            if (!welcomeShown) {
+                setTimeout(() => {
+                    showNotification('success', 'Welcome to the Admin Dashboard!');
+                    localStorage.setItem('dashboardWelcome', 'shown');
+                }, 1000);
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + K for search focus
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.querySelector('.navbar-search input').focus();
+            }
+            
+            // Ctrl/Cmd + B for sidebar toggle
+            if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+                e.preventDefault();
+                document.getElementById('sidebarToggle').click();
+            }
+        });
+
+        // Handle chart responsiveness
+        window.addEventListener('resize', function() {
+            if (typeof Chart !== 'undefined' && Chart.instances) {
+                Chart.instances.forEach(chart => {
+                    if (chart && typeof chart.resize === 'function') {
+                        chart.resize();
+                    }
+                });
+            }
+        });
+
+        // Add loading states to action buttons
+        function addLoadingState(button, originalText) {
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Loading...';
+            button.disabled = true;
+            
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }, 2000);
+        }
+
+        // Enhanced error handling
+        window.addEventListener('error', function(e) {
+            console.error('Dashboard error:', e.error);
+            showNotification('error', 'An error occurred. Please refresh the page.');
+        });
+
+        // Performance monitoring
+        function trackPagePerformance() {
+            window.addEventListener('load', function() {
+                // Use performance.now() for more accurate timing
+                if (window.performance && window.performance.timing) {
+                    const loadTime = window.performance.timing.loadEventEnd - window.performance.timing.navigationStart;
+                    if (loadTime > 0) {
+                        console.log('Page load time:', loadTime + 'ms');
+                        
+                        if (loadTime > 3000) {
+                            console.warn('Slow page load detected');
+                        }
+                    }
+                }
+            });
+        }
+
+        trackPagePerformance();
+    </script>
+
+    <!-- Quick Action Floating Button (Optional) -->
+    <div class="position-fixed bottom-0 end-0 p-4">
+        <div class="btn-group-vertical" role="group">
+            <button type="button" class="btn btn-primary btn-sm mb-2" onclick="quickAction('backup')" 
+                    data-bs-toggle="tooltip" title="System Backup">
+                <i class="fas fa-database"></i>
+            </button>
+            <button type="button" class="btn btn-warning btn-sm mb-2" onclick="quickAction('maintenance')"
+                    data-bs-toggle="tooltip" title="Maintenance Mode">
+                <i class="fas fa-tools"></i>
+            </button>
+            <button type="button" class="btn btn-info btn-sm" onclick="quickAction('cleanup')"
+                    data-bs-toggle="tooltip" title="Clean Old Data">
+                <i class="fas fa-broom"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    </script>
+</body>
+</html>

@@ -192,6 +192,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "static/media")
 MEDIA_URL = "media/" 
 
 
+
 if not DEBUG:
     # DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
     # STATICFILES_STORAGE = 'storages.backends.s3boto3.S3StaticStorage'

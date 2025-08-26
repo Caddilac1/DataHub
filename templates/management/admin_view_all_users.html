@@ -486,7 +486,7 @@
             <div class="nav-section">
                 <div class="nav-section-title">Main</div>
                 <div class="nav-item">
-                    <a href="" class="nav-link">
+                    <a href="{% url 'admin_dashboard' %}" class="nav-link">
                         <i class="fas fa-tachometer-alt"></i>
                         Dashboard
                     </a>
@@ -496,7 +496,7 @@
             <div class="nav-section">
                 <div class="nav-section-title">User Management</div>
                 <div class="nav-item">
-                    <a href="" class="nav-link active">
+                    <a href="{% url 'view_all_users' %}" class="nav-link active">
                         <i class="fas fa-users"></i>
                         All Users
                     </a>
@@ -508,7 +508,7 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="" class="nav-link">
+                    <a href="#" class="nav-link">
                         <i class="fas fa-shield-alt"></i>
                         Admins & Agents
                     </a>
@@ -518,13 +518,13 @@
             <div class="nav-section">
                 <div class="nav-section-title">Orders & Payments</div>
                 <div class="nav-item">
-                    <a href="" class="nav-link">
+                    <a href="#" class="nav-link">
                         <i class="fas fa-shopping-cart"></i>
                         All Orders
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="" class="nav-link">
+                    <a href="#" class="nav-link">
                         <i class="fas fa-credit-card"></i>
                         Payments
                     </a>
@@ -534,19 +534,19 @@
             <div class="nav-section">
                 <div class="nav-section-title">Management</div>
                 <div class="nav-item">
-                    <a href="" class="nav-link">
+                    <a href="#" class="nav-link">
                         <i class="fas fa-sim-card"></i>
                         Telcos & Bundles
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="" class="nav-link">
+                    <a href="#" class="nav-link">
                         <i class="fas fa-key"></i>
                         OTP Management
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="" class="nav-link">
+                    <a href="#" class="nav-link">
                         <i class="fas fa-cogs"></i>
                         System Config
                     </a>
@@ -572,10 +572,10 @@
                         {{ request.user.full_name.0 }}
                     </div>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href=""><i class="fas fa-user me-2"></i>Profile</a></li>
-                        <li><a class="dropdown-item" href=""><i class="fas fa-cog me-2"></i>Settings</a></li>
+                        <li><a class="dropdown-item" href="{% url 'user_profile' %}"><i class="fas fa-user me-2"></i>Profile</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href=""><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        <li><a class="dropdown-item" href="{% url 'signout' %}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                     </ul>
                 </div>
             </div>

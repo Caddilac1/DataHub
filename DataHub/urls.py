@@ -26,6 +26,7 @@ urlpatterns = [
     path('', include('system.urls')),
     path('', include('authentication.urls')),
     path('dashboard/agent/', include('agentapp.urls')),  # Include the URLs from the 'system' app
+    path('dashboard/management/', include('management.urls')),  # Include the URLs from the 'system' app
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'system',
+    'management',
     'django.contrib.sites',
     'allauth',
     'allauth.account',
@@ -191,6 +192,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "static/media")
 MEDIA_URL = "media/" 
 
 
+
 if not DEBUG:
     # DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
     # STATICFILES_STORAGE = 'storages.backends.s3boto3.S3StaticStorage'
@@ -277,13 +279,23 @@ LOGGING = {
 
 
 if DEBUG:
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    #EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'smtp.gmail.com'  
+    EMAIL_PORT = 465            
+    EMAIL_USE_TLS = False
+    EMAIL_USE_SSL = True       
+    EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")  
+    EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
+    DEFAULT_FROM_EMAIL = 'DataHub <datahubone@gmail.com>'
+    
 else:
     # Your Gmail SMTP settings here
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
     EMAIL_HOST = 'smtp.gmail.com'  
-    EMAIL_PORT = 587             
-    EMAIL_USE_TLS = True         
+    EMAIL_PORT = 465            
+    EMAIL_USE_TLS = False
+    EMAIL_USE_SSL = True       
     EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")  
     EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
     DEFAULT_FROM_EMAIL = 'DataHub <datahubone@gmail.com>'

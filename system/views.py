@@ -309,3 +309,68 @@ class PaymentView(LoginRequiredMixin, View):
         except Exception as e:
             logger.error(f"Error during payment verification for reference {reference}: {e}", exc_info=True)
             return redirect(reverse('home') + f'?payment_status=error&message={str(e)}')
+        
+
+
+
+class GuestOrderView(View):
+    def post(self, request, *args, **kwargs):
+        phone_number = request.POST.get('phone_number')
+        bundle_id = request.POST.get('bundle_id')
+
+        if not all([phone_number, bundle_id]):
+            return JsonResponse({'status': 'error', 'message': 'Missing phone number or bundle ID.'}, status=400)
+
+        try:
+            bundle = get_object_or_404(Bundle, pk=bundle_id)
+
+            # Create a guest user based on the phone number
+            # This is crucial for linking the order to a user object
+            guest_user, created = CustomUser.objects.get_or_create(
+                phone_number=phone_number,
+                defaults={
+                    'full_name': 'Guest User',
+                    'email': f'guest_{uuid.uuid4().hex[:10]}@datahub.com',
+                    'role': 'customer',
+                    'account_status': 'active',
+                    'email_verified': True
+                }
+            )
+
+            with transaction.atomic():
+                order = DataBundleOrder.objects.create(
+                    user=guest_user,
+                    telco=bundle.telco,
+                    bundle=bundle,
+                    phone_number=phone_number,
+                    status='pending',
+                    ip_address=request.META.get('REMOTE_ADDR'),
+                    user_agent=request.META.get('HTTP_USER_AGENT', '')
+                )
+                
+                reference = str(uuid.uuid4())
+                
+                payment = Payment.objects.create(
+                    order=order,
+                    amount=bundle.price,
+                    reference=reference,
+                    status='pending'
+                )
+                
+                callback_url = request.build_absolute_uri(reverse('payment_callback'))
+
+                paystack_response = initialize_paystack_payment(
+                    email=guest_user.email,
+                    amount=payment.amount,
+                    reference=reference,
+                    callback_url=callback_url
+                )
+
+                if paystack_response.get('status'):
+                    return JsonResponse({'status': 'success', 'authorization_url': paystack_response['data']['authorization_url']})
+                else:
+                    raise Exception("Failed to initialize payment with gateway.")
+
+        except Exception as e:
+            logger.error(f"Error during guest order creation: {e}", exc_info=True)
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)

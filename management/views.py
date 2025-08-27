@@ -16,7 +16,8 @@ from authentication.models import (
     DataBundleOrder,
     SystemConfiguration,
     OTP,
-    Payment
+    Payment,
+    Bundle
 )
 from authentication.models import *
 from django.db.models.functions import TruncMonth
@@ -221,3 +222,26 @@ class AdminviewAllOrders(LoginRequiredMixin, ListView):
         context['total_completed_orders'] = total_completed_orders 
         context['page_header'] = 'Order Management'
         return context
+
+
+
+
+class AdminViewAllBundle(LoginRequiredMixin,ListView):
+    model = Bundle
+    context_object_name = 'bundles'
+    template_name = 'management/bundles/admin_view_all_bundles.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_name'] = 'data_bundles'
+        context['list_name'] = 'bundle_lists'
+        return context
+    
+
+    def get_queryset(self):
+        queryset = Bundle.objects.select_related()
+        search = self.request.GET.get('search')
+        if search:
+            queryset()
+
+        return queryset

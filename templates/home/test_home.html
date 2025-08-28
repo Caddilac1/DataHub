@@ -620,7 +620,7 @@ function createPhoneInputPopup() {
 
 // Show phone input popup
 function showPhoneInputPopup() {
-    let phonePopup = document.getElementById('phoneInputPopup');
+   let phonePopup = document.getElementById('phonePopupOverlay');
     
     if (!phonePopup) {
         phonePopup = createPhoneInputPopup();
@@ -679,7 +679,7 @@ function showPhoneInputPopup() {
 
 // Close phone input popup
 function closePhoneInputPopup() {
-    const phonePopup = document.getElementById('phoneInputPopup');
+    const phonePopup = document.getElementById('phonePopupOverlay');
     if (phonePopup) {
         const popupContent = phonePopup.querySelector('div');
         popupContent.style.transform = 'translate(-50%, -50%) scale(0.8)';

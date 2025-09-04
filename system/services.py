@@ -4,6 +4,7 @@ from authentication.models import DataBundleOrder, Payment, SystemConfiguration
 from django.conf import settings
 from .datamart_client import DataMartClient
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -92,46 +93,69 @@ def handle_successful_payment(order_id):
     return result
 
 def trigger_datamart_api(order):
-    """
-    Trigger the DataMart API for a given order.
-    
-    Args:
-        order (DataBundleOrder): The order to process
-        
-    Returns:
-        dict: Result of the API call
-    """
     phone_number = order.phone_number
-    network_code = order.telco.code  # make sure this matches DataMart's expected value
+    network_code = order.telco.code
     bundle_size_mb = order.bundle.size_mb
-    bundle_size_gb = f"{bundle_size_mb / 1000:g}"
-    
+    bundle_size_gb = f"{bundle_size_mb / 1000:g}"  
+
+    print(f"[STEP 1] Preparing DataMart API call for order={order.id}")
+    print(f"[STEP 1.1] Phone={phone_number}, Network={network_code}, Bundle={bundle_size_gb}GB")
+
     try:
         client = DataMartClient(settings.DATAMART_API_KEY)
         response = client.purchase_data(phone_number, network_code, bundle_size_gb)
-        
-        # Update order with provider information if available
-        if hasattr(response, 'get') and response.get('order_id'):
-            order.provider_order_id = response.get('order_id')
-            order.provider_status = response.get('status', 'processing')
-            order.save()
-        
+
+        print(f"[STEP 2] Raw DataMart API Response for order={order.id}: {response}")
+
+        # Extract main "data" block
+        data = response.get("data", {})
+        print(f"[STEP 3] Extracted 'data' block: {data}")
+
+        # ✅ Grab orderReference from either level
+        order_ref = (
+            data.get("orderReference")
+            or data.get("apiResponse", {}).get("data", {}).get("ref")
+        )
+        print(f"[STEP 4] Extracted order_ref={order_ref}")
+
+        # ✅ Determine status (prefer inner apiResponse → fall back to orderStatus → top-level status)
+        status = (
+            data.get("apiResponse", {}).get("data", {}).get("status")
+            or data.get("orderStatus")
+            or response.get("status")
+            or "pending"
+        )
+        print(f"[STEP 5] Extracted status={status}")
+
+        # Save values into order
+        order.provider_order_id = order_ref
+        order.provider_status = status
+        order.save(update_fields=["provider_order_id", "provider_status", "status"])
+
+        print(f"[STEP 6] Order updated -> provider_order_id={order.provider_order_id}, status={order.status}")
+        print(f"[DEBUG] Extracted order_ref={order_ref}, status={status}")
+        print(f"[DEBUG] Saving to order {order.id} -> provider_order_id={order.provider_order_id}, provider_status={order.provider_status}")
+        order.refresh_from_db()
+        print(f"[CHECK DB] After save: provider_order_id={order.provider_order_id}, provider_status={order.provider_status}, status={order.status}")
+
+
+
         return {
-            'success': True,
-            'response': response,
-            'message': 'DataMart API call successful'
+            "success": True,
+            "response": response,
+            "message": "DataMart API call successful"
         }
+
     except Exception as e:
-        logger.error(f"DataMart API call failed for order {order.id}: {str(e)}")
-        # Mark order as failed if API call fails
-        order.status = 'failed'
-        order.save()
-        
+        print(f"[ERROR] DataMart API call failed for order={order.id}: {str(e)}")
+        order.status = "failed"
+        order.save(update_fields=["status"])
         return {
-            'success': False,
-            'error': str(e),
-            'message': 'DataMart API call failed'
+            "success": False,
+            "error": str(e),
+            "message": "DataMart API call failed"
         }
+
 
 def manually_trigger_api_for_order(order_id, admin_user):
     """

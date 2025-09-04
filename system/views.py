@@ -23,7 +23,7 @@ from authentication.models import Bundle, DataBundleOrder, Payment
 from .services import initialize_paystack_payment, verify_paystack_payment
 import logging
 from django.conf import settings
-
+from .tasks import recheck_datamart_status
 logger = logging.getLogger(__name__)
 
 # Create your views here.
@@ -192,25 +192,23 @@ class TestHomeView(LoginRequiredMixin, TemplateView):
 
 # --- New Class-Based View for Payment Logic ---
 class PaymentView(LoginRequiredMixin, View):
-    
+
     def post(self, request, *args, **kwargs):
         """
         Handles the POST request to initiate a new Paystack payment.
-        This replaces the old `initiate_payment` function.
         """
         bundle_id = request.POST.get('bundle_id')
         phone_number = request.POST.get('phone_number')
-        
+
         if not bundle_id or not phone_number:
             return JsonResponse({'status': 'error', 'message': 'Missing bundle ID or phone number'}, status=400)
 
         try:
             with transaction.atomic():
                 bundle = get_object_or_404(Bundle, pk=bundle_id)
-                logger.info(f"Successfully retrieved bundle with ID: {bundle_id}")
                 user = request.user
-                
-                # Create the order first 
+
+                # Create order
                 order = DataBundleOrder.objects.create(
                     user=user,
                     telco=bundle.telco,
@@ -220,34 +218,41 @@ class PaymentView(LoginRequiredMixin, View):
                     ip_address=request.META.get('REMOTE_ADDR'),
                     user_agent=request.META.get('HTTP_USER_AGENT', '')
                 )
-                logger.info(f"Order {order.id} created successfully.")
-                
-                # Generate a unique reference ID for the Paystack transaction
-                reference = str(uuid.uuid4())
-                
-                # Create the payment record linked to the order
-                logger.info(f"Creating payment record for order {order.id}")
+
+                # Temp reference
+                temp_reference = str(uuid.uuid4())
+
+                # Create payment record
                 payment = Payment.objects.create(
                     order=order,
                     amount=bundle.price,
-                    reference=reference,
+                    reference=temp_reference,
                     status='pending'
                 )
-                logger.info(f"Payment record created: {payment.id}")
 
-                # Build the callback URL for Paystack to redirect to
+                # Build callback
                 callback_url = request.build_absolute_uri(reverse('payment_callback'))
-                logger.info(f"Initializing Paystack payment for user {user.email}, reference {reference}.")
-                
+
+                # Init Paystack
                 paystack_response = initialize_paystack_payment(
                     email=user.email,
                     amount=payment.amount,
-                    reference=reference,
+                    reference=temp_reference,
                     callback_url=callback_url
                 )
-                
-                return JsonResponse({'status': 'success', 'authorization_url': paystack_response['data']['authorization_url']})
-            
+
+                # Update payment reference from Paystack
+                actual_reference = paystack_response['data'].get('reference')
+                if actual_reference:
+                    payment.reference = actual_reference
+                    payment.save(update_fields=['reference'])
+
+                return JsonResponse({
+                    'status': 'success',
+                    'authorization_url': paystack_response['data']['authorization_url'],
+                    'reference': actual_reference
+                })
+
         except Exception as e:
             logger.error(f"Error initiating payment: {e}", exc_info=True)
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
@@ -255,61 +260,51 @@ class PaymentView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         """
         Handles the GET request from Paystack after a payment attempt.
-        This replaces the old `paystack_callback` function.
         """
         user = request.user
         reference = request.GET.get('reference')
         if not reference:
             return redirect(reverse('test_home') + '?payment_status=failed&message=Invalid payment reference')
-            
+
         try:
             paystack_response = verify_paystack_payment(reference)
-            
+
+            payment = get_object_or_404(Payment, reference=reference)
+            order = payment.order
+
             if paystack_response['data']['status'] == 'success':
                 with transaction.atomic():
-                    payment = get_object_or_404(Payment, reference=reference)
-                    order = payment.order
-                    
+                    # Update payment
                     payment.status = 'success'
                     payment.paid_at = paystack_response['data']['paid_at']
                     payment.save()
-                    
-                    order.status = 'paid' # 'paid' status before fulfillment begins
-                    order.save()
-                    recheck_datamart_status(order.id)
-                    
-                    # Log successful payment for internal records
-                    logger.info(f"Payment successful for order {order.id}. Reference: {reference}")
-                if user.role == 'customer':
 
+                    order.save()
+
+                # Redirects by user role
+                if user.role == 'customer':
                     messages.success(request, f"Payment successful for order {order.id}. Your data bundle will be processed shortly.")
                     return redirect(reverse('home') + f'?payment_status=success&order_id={order.id}')
                 elif user.role == 'agent':
                     messages.success(request, f"Payment successful for order {order.id}. The data bundle will be processed shortly.")
                     return redirect(reverse('agent_home_page') + f'?payment_status=success&order_id={order.id}')
-
                 else:
                     messages.success(request, f"Payment successful for order {order.id}. The data bundle will be processed shortly.")
-                    return redirect(reverse('home') + f'?payment_status=success&order_id={order.id}')   
-                
+                    return redirect(reverse('home') + f'?payment_status=success&order_id={order.id}')
+
             else:
-                payment = get_object_or_404(Payment, reference=reference)
-                order = payment.order
-                
-                payment.status = 'failed'
-                payment.save()
-                
-                order.status = 'failed'
-                order.save()
-                
-                logger.warning(f"Payment failed for order {order.id}. Paystack status: {paystack_response['data']['status']}")
-                
+                with transaction.atomic():
+                    payment.status = 'failed'
+                    payment.save()
+
+                    order.status = 'failed'
+                    order.save()
+
                 return redirect(reverse('test_home') + '?payment_status=failed')
-                
+
         except Exception as e:
             logger.error(f"Error during payment verification for reference {reference}: {e}", exc_info=True)
             return redirect(reverse('home') + f'?payment_status=error&message={str(e)}')
-        
 
 
 

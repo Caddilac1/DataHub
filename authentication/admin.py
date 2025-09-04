@@ -558,7 +558,7 @@ class DataBundleOrderAdmin(admin.ModelAdmin):
             'fields': ('id', 'user', 'telco', 'bundle', 'phone_number')
         }),
         ('Status', {
-            'fields': ('status', 'provider_order_id')
+            'fields': ('status', 'provider_order_id' , 'provider_status')
         }),
         ('Tracking', {
             'fields': ('ip_address', 'user_agent', 'created_at', 'updated_at'),

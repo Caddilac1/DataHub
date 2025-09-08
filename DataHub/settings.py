@@ -281,23 +281,23 @@ LOGGING = {
 if DEBUG:
     #EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = 'smtp.gmail.com'  
-    EMAIL_PORT = 465            
-    EMAIL_USE_TLS = False
-    EMAIL_USE_SSL = True       
-    EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")  
-    EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
-    DEFAULT_FROM_EMAIL = 'DataHub <datahubone@gmail.com>'
+    EMAIL_HOST = 'smtp.sendgrid.net'
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+    EMAIL_USE_SSL = False  # Don't use both TLS and SSL
+    EMAIL_HOST_USER = 'apikey'  # This should literally be 'apikey'
+    EMAIL_HOST_PASSWORD = os.environ.get("SENDGRID_API_KEY")  # Your actual API key
+    DEFAULT_FROM_EMAIL = 'caddilac85@gmail.com'
     
 else:
     # Your Gmail SMTP settings here
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = 'smtp.gmail.com'  
-    EMAIL_PORT = 465            
-    EMAIL_USE_TLS = False
-    EMAIL_USE_SSL = True       
-    EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")  
-    EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
+    EMAIL_HOST = 'smtp.sendgrid.net'
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+    EMAIL_USE_SSL = False  # Don't use both TLS and SSL
+    EMAIL_HOST_USER = 'apikey'  # This should literally be 'apikey'
+    EMAIL_HOST_PASSWORD = os.environ.get("SENDGRID_API_KEY")  # Your actual API key
     DEFAULT_FROM_EMAIL = 'DataHub <datahubone@gmail.com>'
 
 #EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -338,4 +338,6 @@ CSRF_TRUSTED_ORIGINS = [
 
 
 SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
-EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
+
+EMAIL_TIMEOUT = 30
+SERVER_EMAIL = DEFAULT_FROM_EMAIL

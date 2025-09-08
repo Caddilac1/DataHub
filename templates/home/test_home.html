@@ -302,6 +302,7 @@
         // The purchase modal will require some JS to function, but it won't be using the JSON data.
         // It will need to handle the phone number input and selected plan logic.
         // Global variables
+// Global variables
 let selectedNetwork = '';
 let selectedPlan = null;
 const purchaseModal = document.getElementById('purchaseModal');
@@ -385,31 +386,23 @@ function setGreeting() {
     greetingEl.textContent = greeting;
 }
 
-
 const fullName = "{{ request.user.full_name|default:'Guest'|escapejs }}";
 
-    function getInitials(name) {
-        if (!name || name === "Guest") return "G";
-        const parts = name.trim().split(" ");
-        if (parts.length === 1) return parts[0][0].toUpperCase();
-        return parts[0][0].toUpperCase() + parts[parts.length - 1][0].toUpperCase();
-    }
+function getInitials(name) {
+    if (!name || name === "Guest") return "G";
+    const parts = name.trim().split(" ");
+    if (parts.length === 1) return parts[0][0].toUpperCase();
+    return parts[0][0].toUpperCase() + parts[parts.length - 1][0].toUpperCase();
+}
 
-    document.getElementById("initials").textContent = getInitials(fullName);
+document.getElementById("initials").textContent = getInitials(fullName);
 
-
-
-    document.querySelectorAll('.network-card').forEach(card => {
+document.querySelectorAll('.network-card').forEach(card => {
     const network = card.dataset.network; // e.g. "mtn"
- 
-
     const selector = `.network-card[data-network="${network}"]`;
     const element = document.querySelector(selector);
-
     console.log("Selector:", selector, "Element:", element);
 });
-
-
 
 // Update stock status dynamically
 function updateStockStatus() {
@@ -455,7 +448,6 @@ function updateStockStatus() {
         }
     });
 }
-
 
 // Tab navigation with enhanced animations
 function initNavigation() {
@@ -518,7 +510,360 @@ function switchToTab(tab) {
     }
 }
 
-// Open modal for purchasing data
+// Create phone number input popup overlay
+function createPhoneInputPopup() {
+    // Create the popup overlay
+    const phonePopup = document.createElement('div');
+    phonePopup.id = 'phonePopupOverlay';
+    phonePopup.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: none;
+        z-index: 1001;
+        backdrop-filter: blur(10px);
+        animation: popupFadeIn 0.3s ease-out;
+    `;
+
+    // Create the popup content
+    const popupContent = document.createElement('div');
+    popupContent.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 40px;
+        border-radius: 25px;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        animation: popupSlideIn 0.4s ease-out;
+    `;
+
+    popupContent.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h3 style="color: #2c3e50; margin: 0; font-size: 1.6rem;">Enter Phone Number</h3>
+            <span id="phonePopupClose" style="font-size: 2rem; cursor: pointer; color: #aaa; transition: all 0.3s ease;">&times;</span>
+        </div>
+        
+        <div id="selectedPlanPopup" style="background: linear-gradient(135deg, #e8f5e8, #d4edda); padding: 20px; border-radius: 15px; margin-bottom: 25px; border: 2px solid #4CAF50;">
+            <div style="font-weight: bold; margin-bottom: 8px; color: #2c3e50;">Selected Plan:</div>
+            <div id="selectedPlanDetailsPopup"></div>
+        </div>
+
+        <div style="background: linear-gradient(135deg, #fff3cd, #ffeaa7); border: 2px solid #ffeaa7; color: #856404; padding: 20px; border-radius: 15px; margin-bottom: 25px; font-size: 0.95rem; line-height: 1.5;">
+            <strong style="color: #d63031;">⚠️ Important Reminders:</strong><br>
+            • Double-check your phone number before purchasing<br>
+            • Data delivery is <strong>not instant</strong> - please be patient<br>
+            • No refunds for wrong numbers or duplicate orders
+        </div>
+
+        <input type="tel" id="phoneInputPopup" placeholder="Enter phone number (must start with 0)" maxlength="10" style="
+            width: 100%;
+            padding: 15px;
+            border: 3px solid #ddd;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            margin-bottom: 18px;
+            transition: all 0.4s ease;
+            box-sizing: border-box;
+        ">
+        
+        <div id="phoneErrorPopup" style="display: none; color: #e74c3c; font-size: 0.95rem; margin-top: -12px; margin-bottom: 18px;"></div>
+        
+        <button id="purchaseBtnPopup" disabled style="
+            width: 100%;
+            background: #ccc;
+            color: white;
+            padding: 18px;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: not-allowed;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        ">Complete Purchase</button>
+    `;
+
+    phonePopup.appendChild(popupContent);
+    document.body.appendChild(phonePopup);
+
+    // Add CSS for animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes popupFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes popupSlideIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -60%) scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+
+    return phonePopup;
+}
+
+// Show phone input popup
+function showPhoneInputPopup() {
+   let phonePopup = document.getElementById('phonePopupOverlay');
+    
+    if (!phonePopup) {
+        phonePopup = createPhoneInputPopup();
+    }
+
+    // Update selected plan details in popup
+    const selectedPlanDetailsPopup = document.getElementById('selectedPlanDetailsPopup');
+    if (selectedPlan && selectedPlanDetailsPopup) {
+        selectedPlanDetailsPopup.innerHTML = `
+            <strong style="color: #2c3e50; font-size: 1.1rem;">${selectedPlan.size}</strong> - <span style="color: #4CAF50; font-weight: bold;">${selectedPlan.price}</span><br>
+            <small style="color: #6c757d;">${selectedPlan.validity}</small>
+        `;
+    }
+
+    phonePopup.style.display = 'block';
+    
+    // Clear previous input
+    const phoneInputPopup = document.getElementById('phoneInputPopup');
+    const phoneErrorPopup = document.getElementById('phoneErrorPopup');
+    phoneInputPopup.value = '';
+    phoneErrorPopup.style.display = 'none';
+    phoneInputPopup.classList.remove('error');
+    
+    // Initialize popup phone validation
+    initPhoneValidationPopup();
+    
+    // Focus on input
+    setTimeout(() => {
+        phoneInputPopup.focus();
+    }, 300);
+
+    // Close popup handlers
+    const closeBtn = document.getElementById('phonePopupClose');
+    const purchaseBtnPopup = document.getElementById('purchaseBtnPopup');
+    
+    closeBtn.onclick = closePhoneInputPopup;
+    phonePopup.onclick = (e) => {
+        if (e.target === phonePopup) {
+            closePhoneInputPopup();
+        }
+    };
+    
+    closeBtn.onmouseover = () => {
+        closeBtn.style.color = '#333';
+        closeBtn.style.transform = 'rotate(90deg) scale(1.2)';
+    };
+    
+    closeBtn.onmouseout = () => {
+        closeBtn.style.color = '#aaa';
+        closeBtn.style.transform = '';
+    };
+
+    // Purchase button handler
+    purchaseBtnPopup.onclick = (e) => processPurchaseFromPopup(e);
+}
+
+// Close phone input popup
+function closePhoneInputPopup() {
+    const phonePopup = document.getElementById('phonePopupOverlay');
+    if (phonePopup) {
+        const popupContent = phonePopup.querySelector('div');
+        popupContent.style.transform = 'translate(-50%, -50%) scale(0.8)';
+        popupContent.style.opacity = '0';
+        phonePopup.style.opacity = '0';
+        
+        setTimeout(() => {
+            phonePopup.style.display = 'none';
+            popupContent.style.transform = 'translate(-50%, -50%) scale(1)';
+            popupContent.style.opacity = '1';
+            phonePopup.style.opacity = '1';
+        }, 300);
+    }
+}
+
+// Initialize phone validation for popup
+function initPhoneValidationPopup() {
+    const phoneInputPopup = document.getElementById('phoneInputPopup');
+    const purchaseBtnPopup = document.getElementById('purchaseBtnPopup');
+    const phoneErrorPopup = document.getElementById('phoneErrorPopup');
+    
+    if (!phoneInputPopup) return;
+    
+    phoneInputPopup.oninput = function() {
+        this.value = this.value.replace(/\D/g, '');
+        
+        if (this.value.length > 0 && !this.value.startsWith('0')) {
+            this.value = '0' + this.value.slice(0, 9);
+        }
+        
+        if (this.value.length > 10) {
+            this.value = this.value.slice(0, 10);
+        }
+        
+        checkFormValidityPopup();
+    };
+
+    phoneInputPopup.onfocus = function() {
+        this.style.transform = 'scale(1.02)';
+        this.style.borderColor = '#4CAF50';
+    };
+
+    phoneInputPopup.onblur = function() {
+        this.style.transform = '';
+        if (!this.classList.contains('error')) {
+            this.style.borderColor = '#ddd';
+        }
+    };
+}
+
+// Check form validity for popup
+function checkFormValidityPopup() {
+    const phoneInputPopup = document.getElementById('phoneInputPopup');
+    const purchaseBtnPopup = document.getElementById('purchaseBtnPopup');
+    const phoneErrorPopup = document.getElementById('phoneErrorPopup');
+    
+    if (!phoneInputPopup || !purchaseBtnPopup) return;
+    
+    const phone = phoneInputPopup.value;
+    const isPhoneValid = validatePhone(phone);
+    const isPlanSelected = selectedPlan !== null;
+    
+    if (phone.length > 0) {
+        if (!phone.startsWith('0')) {
+            phoneErrorPopup.textContent = 'Phone number must start with 0';
+            phoneErrorPopup.style.display = 'block';
+            phoneInputPopup.classList.add('error');
+            phoneInputPopup.style.borderColor = '#e74c3c';
+        } else if (phone.length !== 10) {
+            phoneErrorPopup.textContent = 'Phone number must be exactly 10 digits';
+            phoneErrorPopup.style.display = 'block';
+            phoneInputPopup.classList.add('error');
+            phoneInputPopup.style.borderColor = '#e74c3c';
+        } else if (!isPhoneValid) {
+            phoneErrorPopup.textContent = 'Please enter a valid phone number';
+            phoneErrorPopup.style.display = 'block';
+            phoneInputPopup.classList.add('error');
+            phoneInputPopup.style.borderColor = '#e74c3c';
+        } else {
+            phoneErrorPopup.style.display = 'none';
+            phoneInputPopup.classList.remove('error');
+            phoneInputPopup.style.borderColor = '#4CAF50';
+        }
+    } else {
+        phoneErrorPopup.style.display = 'none';
+        phoneInputPopup.classList.remove('error');
+        phoneInputPopup.style.borderColor = '#ddd';
+    }
+    
+    const wasDisabled = purchaseBtnPopup.disabled;
+    const shouldEnable = isPhoneValid && isPlanSelected;
+    
+    purchaseBtnPopup.disabled = !shouldEnable;
+    
+    if (shouldEnable) {
+        purchaseBtnPopup.style.background = 'linear-gradient(135deg, #4CAF50, #45a049)';
+        purchaseBtnPopup.style.cursor = 'pointer';
+        
+        if (wasDisabled) {
+            purchaseBtnPopup.style.transform = 'scale(1.05)';
+            setTimeout(() => {
+                purchaseBtnPopup.style.transform = '';
+            }, 200);
+        }
+        
+        // Add hover effect
+        purchaseBtnPopup.onmouseover = function() {
+            if (!this.disabled) {
+                this.style.background = 'linear-gradient(135deg, #45a049, #4CAF50)';
+                this.style.transform = 'translateY(-3px) scale(1.02)';
+                this.style.boxShadow = '0 10px 30px rgba(76, 175, 80, 0.4)';
+            }
+        };
+        
+        purchaseBtnPopup.onmouseout = function() {
+            if (!this.disabled) {
+                this.style.background = 'linear-gradient(135deg, #4CAF50, #45a049)';
+                this.style.transform = '';
+                this.style.boxShadow = '';
+            }
+        };
+    } else {
+        purchaseBtnPopup.style.background = '#ccc';
+        purchaseBtnPopup.style.cursor = 'not-allowed';
+        purchaseBtnPopup.onmouseover = null;
+        purchaseBtnPopup.onmouseout = null;
+        purchaseBtnPopup.style.transform = '';
+        purchaseBtnPopup.style.boxShadow = '';
+    }
+}
+
+// Process purchase from popup
+function processPurchaseFromPopup(event) {
+    event.preventDefault();
+    
+    const phoneNumber = document.getElementById('phoneInputPopup').value;
+    const purchaseBtnPopup = document.getElementById('purchaseBtnPopup');
+    
+    if (!selectedPlan || !validatePhone(phoneNumber)) {
+        showMessage('Please select a plan and enter a valid phone number.', 'error');
+        return;
+    }
+    
+    purchaseBtnPopup.innerHTML = 'Redirecting to checkout page... <span class="loading"></span>';
+    purchaseBtnPopup.disabled = true;
+    
+    const formData = new FormData();
+    formData.append('bundle_id', selectedPlan.id);
+    formData.append('phone_number', phoneNumber);
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch('{% url "payment_initiate" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: formData,
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => { throw new Error(err.message || 'Server error'); });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            window.location.href = data.authorization_url;
+        } else {
+            showMessage(data.message || 'An error occurred. Please try again.', 'error');
+            closePhoneInputPopup();
+            closeModal();
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        showMessage('Network error. Please check your connection.', 'error');
+        closePhoneInputPopup();
+        closeModal();
+    });
+}
+
+// Open modal for purchasing data (modified to use popup for phone input)
 function openModal(network) {
     const card = document.querySelector(`.network-card[data-network="${network.toLowerCase()}"]`);
     if (card && card.classList.contains('out-of-stock')) {
@@ -552,22 +897,29 @@ function openModal(network) {
                 validity: this.querySelector('.plan-validity').textContent.replace('Valid for ', '')
             };
             
-            updateSelectedPlan();
-            checkFormValidity();
+            // Hide the original selected plan display and phone input
+            const originalSelectedPlan = document.getElementById('selectedPlan');
+            const originalPhoneInput = document.getElementById('phoneInput');
+            const originalPurchaseBtn = document.getElementById('purchaseBtn');
+            
+            if (originalSelectedPlan) originalSelectedPlan.style.display = 'none';
+            if (originalPhoneInput) originalPhoneInput.style.display = 'none';
+            if (originalPurchaseBtn) originalPurchaseBtn.style.display = 'none';
             
             this.style.transform = 'scale(1.05)';
             setTimeout(() => {
                 this.style.transform = '';
             }, 200);
+            
+            // Show phone input popup instead
+            setTimeout(() => {
+                showPhoneInputPopup();
+            }, 300);
         });
     });
     
     purchaseModal.style.display = 'block';
-    document.getElementById('phoneInput').value = '';
-    document.getElementById('phoneError').style.display = 'none';
     selectedPlan = null;
-    updateSelectedPlan();
-    checkFormValidity();
 }
 
 // Close modal with animation
@@ -587,7 +939,7 @@ function closeModal() {
     }, 300);
 }
 
-// Update selected plan display
+// Update selected plan display (keeping for compatibility)
 function updateSelectedPlan() {
     const selectedPlanDiv = document.getElementById('selectedPlan');
     const selectedPlanDetails = document.getElementById('selectedPlanDetails');
@@ -636,7 +988,7 @@ function validatePhone(phone) {
     return phoneRegex.test(phone);
 }
 
-// Check form validity
+// Check form validity (keeping original for compatibility)
 function checkFormValidity() {
     const phoneInput = document.getElementById('phoneInput');
     const purchaseBtn = document.getElementById('purchaseBtn');
@@ -684,7 +1036,7 @@ function checkFormValidity() {
     }
 }
 
-// Phone input validation
+// Phone input validation (keeping original for compatibility)
 function initPhoneValidation() {
     const phoneInput = document.getElementById('phoneInput');
     if (!phoneInput) return;
@@ -712,9 +1064,9 @@ function initPhoneValidation() {
     });
 }
 
-// Process purchase
+// Process purchase (keeping original for compatibility)
 function processPurchase(event) {
-    event.preventDefault(); // Prevent the default form submission
+    event.preventDefault();
     
     const phoneNumber = document.getElementById('phoneInput').value;
     const purchaseBtn = document.getElementById('purchaseBtn');
@@ -881,6 +1233,20 @@ function addTransitionStyles() {
         .plans-group {
             display: none;
         }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     `;
     document.head.appendChild(style);
 }
@@ -895,7 +1261,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initModalClickHandler();
     initCountAnimations();
     startRealTimeUpdates();
-    handlePaymentStatus(); // Moved here to be called on initial page load
+    handlePaymentStatus();
     updateStockStatus();
 
     document.querySelectorAll('.buy-btn').forEach(button => {
@@ -919,7 +1285,9 @@ document.addEventListener('DOMContentLoaded', function() {
 // Keyboard navigation
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
-        if (purchaseModal.style.display === 'block') {
+        if (document.getElementById('phoneInputPopup') && document.getElementById('phoneInputPopup').style.display === 'block') {
+            closePhoneInputPopup();
+        } else if (purchaseModal.style.display === 'block') {
             closeModal();
         }
     }

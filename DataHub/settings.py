@@ -32,7 +32,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1','datamart.up.railway.app','datahub.up.railway.app']
 SITE_ID = 1
@@ -336,3 +336,6 @@ CSRF_TRUSTED_ORIGINS = [
 
 ]
 
+
+SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
+EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"

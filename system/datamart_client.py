@@ -9,7 +9,7 @@ class DataMartClient:
             'Content-Type': 'application/json',
             'X-API-Key': api_key
         }
-    
+
     def purchase_data(self, phone_number, network, capacity):
         """Purchase a data bundle for the specified phone number."""
         url = f"{self.base_url}/purchase"
@@ -19,17 +19,19 @@ class DataMartClient:
             'capacity': capacity,
             'gateway': 'wallet'
         }
+        response = requests.post(url, json=payload, headers=self.headers)
+        response.raise_for_status()
+        return response.json()
 
-        
+    def get_order_status(self, order_id):
+        """Check the status of an order by its ID."""
+        url = f"{self.base_url}/order/{order_id}"  # 👈 confirm endpoint
+        response = requests.get(url, headers=self.headers)
+        response.raise_for_status()
+        data = response.json()
+
+        # Extract nested status safely
         try:
-            response = requests.post(url, json=payload, headers=self.headers)
-            print(f"Response Status: {response.status_code}")
-            print(f"Response Text: {response.text}")
-
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as e:
-            print("❌ HTTP Error Occurred!")
-            print(f"Status: {response.status_code}")
-            print(f"Body: {response.text}")
-            raise
+            return data["data"]["apiResponse"]["data"]["status"]
+        except KeyError:
+            return None

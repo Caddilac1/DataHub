@@ -256,7 +256,7 @@ class AdminViewAllBundle(LoginRequiredMixin,ListView):
         context['total_active_customer_bundles'] = self.get_queryset().filter(is_active=True, is_agent_bundle=False).count()
         context['total_agent_active_bundles'] = self.get_queryset().filter(is_active=True, is_agent_bundle=True).count()
         context['total_inactive_bundles'] = self.get_queryset().filter(is_active=False).count()
-        context['total_inactive_agent_bundles'] = self.get_queryset().filter(is_active=False, is_active=True).count()
+        context['total_inactive_agent_bundles'] = self.get_queryset().filter(is_active=False, is_agent_bundle=True).count()
         return context
     
 

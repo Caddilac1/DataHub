@@ -298,7 +298,7 @@ else:
     EMAIL_USE_SSL = False  # Don't use both TLS and SSL
     EMAIL_HOST_USER = 'apikey'  # This should literally be 'apikey'
     EMAIL_HOST_PASSWORD = os.environ.get("SENDGRID_API_KEY")  # Your actual API key
-    DEFAULT_FROM_EMAIL = 'DataHub <datahubone@gmail.com>'
+    DEFAULT_FROM_EMAIL = 'DataHub <caddilac85@gmail.com>'
 
 #EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 

@@ -79,6 +79,7 @@ from .models import CustomUser, DataBundleOrder, Bundle
 import logging
 
 logger = logging.getLogger(__name__)
+from django.core.mail import EmailMessage
 
 
 class RegisterView(View):
@@ -113,7 +114,15 @@ class RegisterView(View):
                 from_email = settings.DEFAULT_FROM_EMAIL
                 to_email = user.email
                 
-                send_mail(subject, plain_message, from_email, [to_email], html_message=html_message)
+                email = EmailMessage(
+                        subject=subject,
+                        body=plain_message,  # Plain text version
+                        from_email=from_email,
+                        to=[to_email],
+                        reply_to=[from_email],  # Optional: set reply-to
+                    )
+                email.attach_alternative(html_message, "text/html")
+                email.send(fail_silently=False)
 
                 # 4. Create an audit log entry
                 AuditLog.objects.create(
@@ -486,7 +495,32 @@ class CustomLoginView(View):
                         {'user': user, 'otp_code': otp_code}
                     )
                     plain_message = strip_tags(html_message)
-                    send_mail(subject, plain_message, settings.DEFAULT_FROM_EMAIL, [user.email], html_message=html_message)
+                    #send_mail(subject, plain_message, settings.DEFAULT_FROM_EMAIL, [user.email], html_message=html_message)
+                    try:
+                        subject = 'DataHub - Your Login OTP'
+                        html_message = render_to_string(
+                            'authentication/emails/otp_login_email.html',
+                            {'user': user, 'otp_code': otp_code}
+                        )
+                        plain_message = strip_tags(html_message)
+                        from_email = settings.DEFAULT_FROM_EMAIL
+                        
+                        # Create EmailMessage for SendGrid compatibility
+                        email_msg = EmailMessage(
+                            subject=subject,
+                            body=plain_message,  # Plain text version
+                            from_email=from_email,
+                            to=[user.email],
+                            reply_to=[from_email],
+                        )
+                         # Send via SendGrid
+                        email_msg.send(fail_silently=False)
+                        
+                        logger.info(f"Login OTP email sent successfully to {user.email}")
+                    except Exception as email_error:
+                        logger.error(f"Failed to send login OTP email to {user.email}: {str(email_error)}")
+                        
+                    
 
                     # Store email in session to verify OTP later
                     request.session['otp_sent_to_email'] = email

@@ -369,13 +369,15 @@ class ResendVerificationOTPView(View):
             plain_message = strip_tags(html_message)
             from_email = settings.DEFAULT_FROM_EMAIL
             
-            send_mail(
-                subject, 
-                plain_message, 
-                from_email, 
-                [user.email], 
-                html_message=html_message
-            )
+            email = EmailMessage(
+                        subject=subject,
+                        body=plain_message,  # Plain text version
+                        from_email=from_email,
+                        to=[to_email],
+                        reply_to=[from_email],  # Optional: set reply-to
+                    )
+            email.attach_alternative(html_message, "text/html")
+            email.send(fail_silently=False)
             
             # Create audit log
             AuditLog.objects.create(
